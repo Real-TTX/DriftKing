@@ -1,0 +1,48 @@
+@page "/Admin/DriftKing/Competitions"
+@model DriftKing.Pages.Admin.Competitions.IndexModel
+@{
+    ViewData["Title"] = "Wettbewerbe";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Wettbewerbe", null) };
+}
+<partial name="_Assets" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("trophy", Model.Toolbar.Total == 0 ? "Noch keine Wettbewerbe" : "Kein Wettbewerb gefunden", Model.Toolbar.Total == 0 ? "Lege eine Aufgabe mit Medaillen und Preisgeld an." : "Ändere die Suche oder die Filter.", Model.Toolbar.Total == 0, "/Admin/DriftKing/Competitions/Edit", "Neuer Wettbewerb", Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="Wettbewerbe">
+            <thead>
+                <tr><th scope="col" class="mat-num mat-hide-sm">#</th><th scope="col">Wettbewerb</th><th scope="col">Strecke</th><th scope="col">Art</th><th scope="col" class="mat-num mat-hide-sm">Gold</th><th scope="col" class="mat-num mat-hide-sm">Preis Gold</th><th scope="col" class="mat-num">Level</th><th scope="col" class="mat-num mat-hide-sm">Fahrer</th><th scope="col" class="mat-hide-sm">Zeitraum</th><th scope="col">Status</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Items)
+                {
+                    <tr>
+                        <td data-label="#" class="mat-num mat-mono mat-hide-sm">@c.SortOrder</td>
+                        <td data-label="Wettbewerb"><a href="/Admin/DriftKing/Competitions/Edit?id=@c.Id">@c.Name</a></td>
+                        <td data-label="Strecke">@(c.Map?.Name ?? "–")</td>
+                        <td data-label="Art">@Looks.ModeName(c.Mode) · @(c.Mode == GameMode.Race ? $"{c.Laps} Runden" : $"{c.DurationS} s")</td>
+                        <td data-label="Gold" class="mat-num mat-mono mat-hide-sm">@DriftKing.Pages.Admin.Competitions.IndexModel.Target(c, c.Gold)</td>
+                        <td data-label="Preis Gold" class="mat-num mat-mono mat-hide-sm">@Ui.Number(c.RewardGold, "N0")&nbsp;¥</td>
+                        <td data-label="Level" class="mat-num mat-mono">@c.UnlockLevel</td>
+                        <td data-label="Fahrer" class="mat-num mat-mono mat-hide-sm">@Model.Participants.GetValueOrDefault(c.Id)</td>
+                        <td data-label="Zeitraum" class="mat-mono mat-hide-sm">@(c.StartDate is null && c.EndDate is null ? "immer" : $"{c.StartDate:dd.MM.yy} – {c.EndDate:dd.MM.yy}")</td>
+                        <td data-label="Status">@if (c.IsEnabled) { <span class="mat-pill mat-pill--ok">Offen</span> } else { <span class="mat-pill mat-pill--plain">Aus</span> }</td>
+                        <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Admin/DriftKing/Competitions/Edit?id=@c.Id" aria-label="@c.Name bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Admin/DriftKing/Competitions/Edit">@Ui.Icon("plus")<span>Neuer Wettbewerb</span></a>
+    </div>
+</div>

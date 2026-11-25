@@ -1,0 +1,15 @@
+/* DriftKing in MatGame's administration (MatUi): only what the toolkit does not have. */
+.dk-gap { margin-top: var(--mat-space-4, 16px); }
+.dk-swatch { display: inline-block; width: 14px; height: 14px; margin-right: 8px; vertical-align: -2px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.2); }
+.dk-place { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; font-weight: 700; background: var(--mat-surface-2, #eee); }
+.dk-place--1 { background: #f6c638; color: #2a1d00; }
+.dk-place--2 { background: #cfd4dc; color: #1c2230; }
+.dk-place--3 { background: #e0a070; color: #2c1606; }
+.dk-medal { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.dk-medal::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.dk-medal--gold { color: #c99a06; }
+.dk-medal--silver { color: #8a93a3; }
+.dk-medal--bronze { color: #b06a32; }
+.dk-medal--none { color: var(--mat-text-3, #999); }
+.dk-medal--none::before { background: transparent; border: 1px solid currentColor; }
+.dk-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--mat-space-4, 16px); }

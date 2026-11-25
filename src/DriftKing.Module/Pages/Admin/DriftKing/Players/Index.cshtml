@@ -1,0 +1,41 @@
+@page "/Admin/DriftKing/Players"
+@model DriftKing.Pages.Admin.Players.IndexModel
+@{
+    ViewData["Title"] = "Fahrer";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Fahrer", null) };
+}
+<partial name="_Assets" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("users", Model.Toolbar.Total == 0 ? "Noch keine Fahrer" : "Kein Fahrer gefunden", Model.Toolbar.Total == 0 ? "Wer DriftKing zum ersten Mal öffnet, steht hier." : "Ändere die Suche oder die Filter.", false, null, null, Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="Fahrer">
+            <thead>
+                <tr><th scope="col">Fahrer</th><th scope="col" class="mat-num">Level</th><th scope="col" class="mat-num">Geld</th><th scope="col" class="mat-num mat-hide-sm">Läufe</th><th scope="col" class="mat-num mat-hide-sm">Siege</th><th scope="col" class="mat-num">Bester Lauf</th><th scope="col" class="mat-hide-sm">Zuletzt</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Items)
+                {
+                    <tr>
+                        <td data-label="Fahrer"><a href="/Admin/DriftKing/Players/Edit?id=@p.Id">@p.DisplayName</a> @if (p.IsGuest) { <span class="mat-pill mat-pill--plain">Gast</span> }</td>
+                        <td data-label="Level" class="mat-num mat-mono">@Progression.LevelOf(p.Xp)</td>
+                        <td data-label="Geld" class="mat-num mat-mono">@Ui.Number(p.Money, "N0")&nbsp;¥</td>
+                        <td data-label="Läufe" class="mat-num mat-mono mat-hide-sm">@p.RunsPlayed</td>
+                        <td data-label="Siege" class="mat-num mat-mono mat-hide-sm">@p.Wins</td>
+                        <td data-label="Bester Lauf" class="mat-num mat-mono">@Plausibility.Describe(p.BestScore)</td>
+                        <td data-label="Zuletzt" class="mat-mono mat-hide-sm">@Ui.Stamp(p.LastSeenDate)</td>
+                        <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Admin/DriftKing/Players/Edit?id=@p.Id" aria-label="@p.DisplayName bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+</div>

@@ -1,0 +1,63 @@
+@page "/Admin/DriftKing/Maps/Edit"
+@model DriftKing.Pages.Admin.Maps.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Neue Strecke" : Model.Name;
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Strecken", "/Admin/DriftKing/Maps"), (Model.IsNew ? "Neu" : Model.Name, null) };
+    ViewData["Width"] = "narrow";
+}
+<partial name="_Assets" />
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+
+    <div data-tabs>
+        <md-tab-group label="Bereiche der Strecke">
+            <md-tab-button panel="map-general" icon="route" active="true">Allgemein</md-tab-button>
+            <md-tab-button panel="map-play" icon="flag">Fahren</md-tab-button>
+        </md-tab-group>
+
+        <md-tab-panel id="map-general" active="true">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    @if (Model.IsNew)
+                    {
+                        <md-field name="Key" kind="select" label="Karte" required value="@Model.Key" options="Model.Keys" hint="Die 3D-Welt, die das Spiel zeichnet." />
+                    }
+                    else
+                    {
+                        <input type="hidden" name="Key" value="@Model.Key" />
+                        <md-field name="KeyShown" label="Karte" value="@Model.Key" mono="true" disabled="true" hint="Die 3D-Welt, die das Spiel zeichnet (fest)." />
+                    }
+                    <md-field name="Name" label="Name" required value="@Model.Name" maxlength="60" />
+                    <md-field name="Description" kind="textarea" label="Beschreibung" value="@Model.Description" maxlength="400" rows="2" optional="true" />
+                    <md-field name="TimeOfDay" kind="radios" label="Licht" value="@Model.TimeOfDay.ToString()" options="Model.Times" />
+                </div>
+            </div>
+        </md-tab-panel>
+
+        <md-tab-panel id="map-play">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form mat-grid mat-grid--2">
+                    <md-field name="DefaultLaps" kind="number" label="Runden (Standard)" required value="@Model.DefaultLaps" min="1" max="20" />
+                    <md-field name="UnlockLevel" kind="number" label="Ab Level" required value="@Model.UnlockLevel" min="1" max="50" />
+                    <md-field name="SortOrder" kind="number" label="Reihenfolge" required value="@Model.SortOrder" />
+                    <md-field name="IsEnabled" kind="switch" label="Fahrbar" value="@Model.IsEnabled.ToString()" />
+                </div>
+            </div>
+            @if (!Model.IsNew)
+            {
+                <div class="mat-card dk-gap">
+                    <div class="mat-card__body">
+                        <dl class="mat-kv">
+                            <dt>Länge des Kurses</dt><dd class="mat-mono">@Ui.Number(MapCatalog.LengthOf(Model.Key), "N0") m</dd>
+                            <dt>Schnellste mögliche Runde</dt><dd class="mat-mono">@Ui.Number(Plausibility.MinRaceTimeMs(MapCatalog.LengthOf(Model.Key), 1) / 1000.0, "0.0") s</dd>
+                        </dl>
+                    </div>
+                </div>
+            }
+        </md-tab-panel>
+    </div>
+
+    <md-buttons save="@(Model.IsNew ? "Anlegen" : "Speichern")" back="/Admin/DriftKing/Maps" delete-handler="@(Model.IsNew ? null : "Delete")" delete-label="Löschen"
+                delete-confirm="@($"„{Model.Name}“ löschen? Beim nächsten Start legt DriftKing die Strecke mit den Standardwerten wieder an – zum Verstecken lieber abschalten.")" />
+</form>

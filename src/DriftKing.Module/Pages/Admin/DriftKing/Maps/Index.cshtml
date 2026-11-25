@@ -1,0 +1,49 @@
+@page "/Admin/DriftKing/Maps"
+@model DriftKing.Pages.Admin.Maps.IndexModel
+@{
+    ViewData["Title"] = "Strecken";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Strecken", null) };
+}
+<partial name="_Assets" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("route", Model.Toolbar.Total == 0 ? "Keine Strecken" : "Keine Strecke gefunden", Model.Toolbar.Total == 0 ? "Beim nächsten Start legt DriftKing die vier Strecken wieder an." : "Ändere die Suche oder die Filter.", Model.Toolbar.Total == 0, Model.CanCreate ? "/Admin/DriftKing/Maps/Edit" : null, "Neue Strecke", Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="Strecken">
+            <thead>
+                <tr><th scope="col" class="mat-num mat-hide-sm">#</th><th scope="col">Strecke</th><th scope="col" class="mat-hide-sm">Karte</th><th scope="col">Licht</th><th scope="col" class="mat-num">Länge</th><th scope="col" class="mat-num">Runden</th><th scope="col" class="mat-num">Level</th><th scope="col">Status</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model.Items)
+                {
+                    <tr>
+                        <td data-label="#" class="mat-num mat-mono mat-hide-sm">@m.SortOrder</td>
+                        <td data-label="Strecke"><a href="/Admin/DriftKing/Maps/Edit?id=@m.Id">@m.Name</a></td>
+                        <td data-label="Karte" class="mat-mono mat-hide-sm">@m.Key</td>
+                        <td data-label="Licht">@Looks.TimeOfDayName(m.TimeOfDay)</td>
+                        <td data-label="Länge" class="mat-num mat-mono">@Ui.Number(MapCatalog.LengthOf(m.Key), "N0") m</td>
+                        <td data-label="Runden" class="mat-num mat-mono">@m.DefaultLaps</td>
+                        <td data-label="Level" class="mat-num mat-mono">@m.UnlockLevel</td>
+                        <td data-label="Status">@if (m.IsEnabled) { <span class="mat-pill mat-pill--ok">Fahrbar</span> } else { <span class="mat-pill mat-pill--plain">Aus</span> }</td>
+                        <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Admin/DriftKing/Maps/Edit?id=@m.Id" aria-label="@m.Name bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+
+    @if (Model.CanCreate)
+    {
+        <div class="mat-actions">
+            <a class="mat-btn mat-btn--primary" href="/Admin/DriftKing/Maps/Edit">@Ui.Icon("plus")<span>Neue Strecke</span></a>
+        </div>
+    }
+</div>

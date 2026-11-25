@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 342 84" width="342" height="84" role="img" aria-label="DriftKing">
+  <defs>
+    <linearGradient id="dkll-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1b3a"/><stop offset="1" stop-color="#0b0a18"/></linearGradient>
+    <linearGradient id="dkll-crown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6fae"/><stop offset="1" stop-color="#ff2e88"/></linearGradient>
+    <linearGradient id="dkll-track" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#29e7ff" stop-opacity="0"/><stop offset=".35" stop-color="#29e7ff"/><stop offset="1" stop-color="#29e7ff"/></linearGradient>
+    <filter id="dkll-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="dkll-smoke"><stop offset="0" stop-color="#f4f2ff" stop-opacity=".22"/><stop offset="1" stop-color="#f4f2ff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g transform="translate(4 10)">
+    <rect width="64" height="64" rx="14" fill="url(#dkll-tile)"/>
+  <circle cx="11" cy="50" r="9" fill="url(#dkll-smoke)"/>
+  <circle cx="6" cy="44" r="6" fill="url(#dkll-smoke)"/>
+  <g filter="url(#dkll-glow)" fill="none" stroke-linecap="round">
+    <path d="M7 55 C 16 44, 30 41, 44 43 S 58 49, 61 46" stroke="url(#dkll-track)" stroke-width="3.2"/>
+    <path d="M10 60 C 20 50, 33 47.5, 46 49.5 S 58 54, 62 51.5" stroke="url(#dkll-track)" stroke-width="3.2" opacity=".75"/>
+  </g>
+  <g filter="url(#dkll-glow)">
+    <path d="M17 33 L14 17 L24.5 25 L32 12 L39.5 25 L50 17 L47 33 Z" fill="url(#dkll-crown)" stroke="#f4f2ff" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M17 33 H47 L46 37.5 H18 Z" fill="#c0135f" stroke="#f4f2ff" stroke-width="1.2" stroke-linejoin="round"/>
+    <circle cx="14" cy="17" r="2.4" fill="#29e7ff"/>
+    <circle cx="32" cy="12" r="2.8" fill="#ffb020"/>
+    <circle cx="50" cy="17" r="2.4" fill="#29e7ff"/>
+    <circle cx="32" cy="29" r="2" fill="#0b0a18"/>
+  </g>
+  </g>
+  <path d="M86.44 62L96.34 7L111.46 7Q117.4 7 119.81 10.3Q122.21 13.59 121.07 19.94L116.44 45.69Q115.03 53.5 111.53 57.75Q108.03 62 101.19 62ZM99.25 52.28L101.16 52.28Q104.19 52.28 104.72 49.34L109.82 20.97Q110.32 18.22 109.73 17.42Q109.14 16.63 106.89 16.63L105.67 16.63ZM118 62L127.9 7L144.78 7Q148.99 7 150.8 8.92Q152.61 10.84 152.73 14.3Q152.84 17.75 152 22.41Q151.19 26.91 149.57 29.59Q147.94 32.28 144.6 33.31Q147.1 33.84 147.78 35.89Q148.46 37.94 147.87 41.19L144.13 62L133.28 62L137.16 40.47Q137.59 38.06 136.71 37.48Q135.83 36.91 133.64 36.91L129.13 62ZM135.42 27.38L138.08 27.38Q140.36 27.38 141.25 22.41Q141.83 19.19 141.51 18.19Q141.19 17.19 139.82 17.19L137.25 17.19ZM148 62L157.9 7L168.53 7L158.63 62ZM163 62L172.9 7L194.9 7L192.97 17.72L182.03 17.72L180.46 26.47L190.83 26.47L188.93 37.06L178.55 37.06L174.06 62ZM193.25 62L201.25 17.56L194.72 17.56L196.62 7L220.68 7L218.78 17.56L212.25 17.56L204.25 62Z" fill="#16151f"/>
+  <path d="M217.84 62L227.74 7L238.62 7L234.65 29.03L243.74 7L254.81 7L244.12 32.19L246.19 62L234.78 62L233.57 35.38L228.78 62ZM247.56 62L257.46 7L268.09 7L258.19 62ZM262.56 62L272.46 7L283.77 7L284.1 33.34L288.84 7L299.46 7L289.56 62L278.81 62L278.26 34.5L273.31 62ZM305.69 62.5Q293.91 62.5 296.95 45.63L301.22 21.91Q303.99 6.5 317.49 6.5Q323.05 6.5 325.62 8.73Q328.19 10.97 328.54 15.25Q328.89 19.53 327.79 25.69L317.04 25.69L317.91 20.81Q318.23 19.03 317.97 17.83Q317.7 16.63 316.17 16.63Q314.26 16.63 313.42 17.91Q312.58 19.19 312.31 20.72L307.51 47.38Q307.11 49.59 307.44 50.98Q307.76 52.38 309.45 52.38Q311.2 52.38 312.03 50.98Q312.86 49.59 313.27 47.31L314.68 39.47L311.74 39.47L313.45 29.97L326.89 29.97L321.13 62L316.72 62L315.68 57.38Q311.88 62.5 305.69 62.5Z" fill="#ff2e88"/>
+  <g stroke="#ff2e88" stroke-linecap="round"><path d="M86 74 H198.67" stroke-width="2.4"/><path d="M128.59 79 H312" stroke-width="1.6" opacity=".55"/></g>
+</svg>

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DriftKing.Core/DriftKing.Core.csproj" />
+    <Project Path="src/DriftKing.Module/DriftKing.Module.csproj" />
+    <Project Path="src/DriftKing.Local/DriftKing.Local.csproj" />
+    <Project Path="src/DriftKing.App/DriftKing.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DriftKing.Tests/DriftKing.Tests.csproj" />
+  </Folder>
+</Solution>

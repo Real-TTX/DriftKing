@@ -1,0 +1,68 @@
+# DriftKing - Local (builds the image from this folder and ../MatGame) with pgAdmin
+#   docker compose -f docker-compose.local.yml up -d --build
+#   App:      http://localhost:2771/driftking/
+#   pgAdmin:  http://localhost:2778   (no sign-in; database password: matgame)
+#   Postgres: localhost:2780
+# MatGame's own local stack also has every game (../MatGame/scripts/redeploy.ps1, port 2770).
+name: driftking-local
+
+services:
+  web:
+    build:
+      context: .
+      additional_contexts:
+        matgame: ../MatGame
+    image: driftking:local
+    restart: unless-stopped
+    ports:
+      - "2771:2771"
+    volumes:
+      - web-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    ports:
+      - "2780:5432"
+    environment:
+      POSTGRES_DB: matgame
+      POSTGRES_USER: matgame
+      POSTGRES_PASSWORD: matgame
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matgame -d matgame"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - "2778:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@driftking.example.com
+      PGADMIN_DEFAULT_PASSWORD: matgame
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    configs:
+      - source: servers
+        target: /pgadmin4/servers.json
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - db
+
+configs:
+  servers:
+    content: |
+      {"Servers": {"1": {"Name": "DriftKing (local)", "Group": "Servers", "Host": "db", "Port": 5432, "MaintenanceDB": "matgame", "Username": "matgame", "SSLMode": "prefer"}}}
+
+volumes:
+  web-data:
+  db-data:
+  pgadmin-data:

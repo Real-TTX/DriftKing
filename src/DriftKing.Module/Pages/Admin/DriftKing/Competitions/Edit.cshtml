@@ -1,0 +1,114 @@
+@page "/Admin/DriftKing/Competitions/Edit"
+@model DriftKing.Pages.Admin.Competitions.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Neuer Wettbewerb" : Model.Name;
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Wettbewerbe", "/Admin/DriftKing/Competitions"), (Model.IsNew ? "Neu" : Model.Name, null) };
+    ViewData["Width"] = "narrow";
+}
+<partial name="_Assets" />
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+
+    <div data-tabs>
+        <md-tab-group label="Bereiche des Wettbewerbs">
+            <md-tab-button panel="competition-general" icon="trophy" active="true">Allgemein</md-tab-button>
+            <md-tab-button panel="competition-task" icon="flag">Aufgabe</md-tab-button>
+            <md-tab-button panel="competition-medals" icon="medal">Medaillen</md-tab-button>
+            @if (!Model.IsNew)
+            {
+                <md-tab-button panel="competition-board" icon="list">Rangliste</md-tab-button>
+            }
+        </md-tab-group>
+
+        <md-tab-panel id="competition-general" active="true">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    <md-field name="Name" label="Name" required value="@Model.Name" maxlength="60" />
+                    <md-field name="Description" kind="textarea" label="Beschreibung" value="@Model.Description" maxlength="400" rows="3" optional="true" />
+                    <div class="mat-grid mat-grid--2">
+                        <md-field name="UnlockLevel" kind="number" label="Ab Level" required value="@Model.UnlockLevel" min="1" max="50" />
+                        <md-field name="SortOrder" kind="number" label="Reihenfolge" required value="@Model.SortOrder" />
+                        <md-field name="StartDate" kind="date" label="Beginn" value="@Model.StartDate?.ToString("yyyy-MM-dd")" optional="true" hint="Leer = sofort." />
+                        <md-field name="EndDate" kind="date" label="Ende" value="@Model.EndDate?.ToString("yyyy-MM-dd")" optional="true" hint="Leer = ohne Ende." />
+                    </div>
+                    <md-field name="IsEnabled" kind="switch" label="Offen für alle" value="@Model.IsEnabled.ToString()" />
+                </div>
+            </div>
+        </md-tab-panel>
+
+        <md-tab-panel id="competition-task">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    <md-field name="MapId" kind="select" label="Strecke" required value="@Model.MapId.ToString()" options="Model.Maps" />
+                    <md-field name="Mode" id="Mode" kind="select" label="Art" required value="@Model.Mode.ToString()" options="Model.Modes" />
+                    <md-field name="Laps" kind="number" label="Runden" value="@Model.Laps" min="1" max="20" show-if="#Mode" show-value="Race" />
+                    <md-field name="DurationS" kind="number" label="Zeit (Sekunden)" value="@Model.DurationS" min="30" max="900" show-if="#Mode" show-value="Score" />
+                    <div class="mat-grid mat-grid--2">
+                        <md-field name="Bots" kind="number" label="Gegner (Bots)" required value="@Model.Bots" min="0" max="7" />
+                        <md-field name="BotSkill" kind="number" label="Können der Gegner" required value="@Model.BotSkill" min="1" max="10" hint="1 = gemütlich, 10 = Bergkönig." />
+                    </div>
+                </div>
+            </div>
+        </md-tab-panel>
+
+        <md-tab-panel id="competition-medals">
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">Ziele</h2></div>
+                <div class="mat-card__body mat-form">
+                    <p class="mat-muted">Drift-Wertung: Punkte (mehr ist besser). Rennen: Zeit in Millisekunden (weniger ist besser, z. B. 185000 = 3:05,0).</p>
+                    <div class="mat-grid mat-grid--3">
+                        <md-field name="Bronze" kind="number" label="Bronze" required value="@Model.Bronze" min="1" />
+                        <md-field name="Silver" kind="number" label="Silber" required value="@Model.Silver" min="1" />
+                        <md-field name="Gold" kind="number" label="Gold" required value="@Model.Gold" min="1" />
+                    </div>
+                </div>
+            </div>
+            <div class="mat-card dk-gap">
+                <div class="mat-card__head"><h2 class="mat-card__title">Preisgeld (Yen)</h2></div>
+                <div class="mat-card__body mat-form">
+                    <p class="mat-muted">Jede Medaille zahlt einmal; wer später eine bessere holt, bekommt die Differenz.</p>
+                    <div class="mat-grid mat-grid--3">
+                        <md-field name="RewardBronze" kind="number" label="Bronze" required value="@Model.RewardBronze" min="0" />
+                        <md-field name="RewardSilver" kind="number" label="Silber" required value="@Model.RewardSilver" min="0" />
+                        <md-field name="RewardGold" kind="number" label="Gold" required value="@Model.RewardGold" min="0" />
+                    </div>
+                </div>
+            </div>
+        </md-tab-panel>
+
+        @if (!Model.IsNew)
+        {
+            <md-tab-panel id="competition-board">
+                <div class="mat-card">
+                    @if (Model.Board.Count == 0)
+                    {
+                        <div class="mat-card__body"><p class="mat-muted">Noch niemand mit Konto ist angetreten.</p></div>
+                    }
+                    else
+                    {
+                        <md-table caption="Rangliste">
+                            <thead>
+                                <tr><th scope="col" class="mat-num">#</th><th scope="col">Fahrer</th><th scope="col" class="mat-num">Bestwert</th><th scope="col">Medaille</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in Model.Board)
+                                {
+                                    <tr>
+                                        <td data-label="#" class="mat-num"><span class="dk-place dk-place--@row.Rank">@row.Rank</span></td>
+                                        <td data-label="Fahrer"><a href="/Admin/DriftKing/Players/Edit?id=@row.PlayerId">@row.Name</a></td>
+                                        <td data-label="Bestwert" class="mat-num mat-mono">@(Model.Mode == GameMode.Race ? TimeSpan.FromMilliseconds(row.TimeMs ?? 0).ToString(@"m\:ss\.fff") : Plausibility.Describe(row.Value))</td>
+                                        <td data-label="Medaille"><span class="dk-medal dk-medal--@row.Medal">@Medals.Name(Enum.Parse<Medal>(row.Medal ?? "none", true))</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </md-table>
+                    }
+                </div>
+            </md-tab-panel>
+        }
+    </div>
+
+    <md-buttons save="@(Model.IsNew ? "Anlegen" : "Speichern")" back="/Admin/DriftKing/Competitions" delete-handler="@(Model.IsNew ? null : "Delete")" delete-label="Löschen"
+                delete-confirm="@($"„{Model.Name}“ löschen? Die Ergebnisse bleiben gespeichert, der Wettbewerb verschwindet aus dem Spiel.")" />
+</form>

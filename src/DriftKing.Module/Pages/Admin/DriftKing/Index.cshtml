@@ -1,0 +1,95 @@
+@page "/Admin/DriftKing"
+@model DriftKing.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Übersicht";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", null) };
+}
+<partial name="_Assets" />
+
+<div class="mat-stats">
+    <a class="mat-stat" href="/Admin/DriftKing/Players">
+        <span class="mat-stat__label">@Ui.Icon("users") Fahrer</span>
+        <span class="mat-stat__value">@Model.Numbers.Players</span>
+        <span class="mat-stat__delta">@Model.Numbers.Accounts mit Konto · @Model.Numbers.ActiveToday heute aktiv</span>
+    </a>
+    <a class="mat-stat" href="/Admin/DriftKing/Runs">
+        <span class="mat-stat__label">@Ui.Icon("flag") Läufe heute</span>
+        <span class="mat-stat__value">@Model.Numbers.RunsToday</span>
+        <span class="mat-stat__delta">@Model.Numbers.RunsTotal insgesamt</span>
+    </a>
+    <div class="mat-stat">
+        <span class="mat-stat__label">@Ui.Icon("network") Live</span>
+        <span class="mat-stat__value">@Model.Running</span>
+        <span class="mat-stat__delta">Läufe · @Model.Lobbies Lobbys · @Model.Drivers Fahrer</span>
+    </div>
+    <div class="mat-stat">
+        <span class="mat-stat__label">@Ui.Icon("drift") Bester Lauf</span>
+        <span class="mat-stat__value">@Plausibility.Describe(Model.Numbers.BestScore)</span>
+        <span class="mat-stat__delta">@(Model.Numbers.BestScoreBy ?? "noch niemand")</span>
+    </div>
+</div>
+
+<div class="dk-cards dk-gap">
+    <section class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">Beliebte Strecken</h2></div>
+        <div class="mat-card__body">
+            @if (Model.Numbers.PopularMaps.Count == 0)
+            {
+                <p class="mat-muted">Noch keine Läufe.</p>
+            }
+            else
+            {
+                <dl class="mat-kv">
+                    @foreach (var (map, runs) in Model.Numbers.PopularMaps)
+                    {
+                        <dt>@map</dt>
+                        <dd class="mat-mono">@runs Läufe</dd>
+                    }
+                </dl>
+            }
+        </div>
+    </section>
+    <section class="mat-card">
+        <div class="mat-card__head"><h2 class="mat-card__title">Inhalt</h2></div>
+        <div class="mat-card__body">
+            <dl class="mat-kv">
+                <dt>Wettbewerbe aktiv</dt><dd class="mat-mono"><a href="/Admin/DriftKing/Competitions">@Model.Numbers.Competitions</a></dd>
+                <dt>Version</dt><dd class="mat-mono">@AppInfo.Version</dd>
+            </dl>
+        </div>
+    </section>
+</div>
+
+<section class="mat-card dk-gap">
+    <div class="mat-card__head"><h2 class="mat-card__title">Live: Räume im Speicher</h2></div>
+    @if (Model.Rooms.Count == 0)
+    {
+        <div class="mat-card__body"><p class="mat-muted">Gerade fährt niemand.</p></div>
+    }
+    else
+    {
+        <md-table caption="Räume im Speicher">
+            <thead>
+                <tr><th scope="col">Code</th><th scope="col">Status</th><th scope="col">Strecke</th><th scope="col">Modus</th><th scope="col" class="mat-num">Fahrer</th><th scope="col" class="mat-num">Bots</th><th scope="col" class="mat-hide-sm">Art</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Rooms)
+                {
+                    <tr>
+                        <td data-label="Code" class="mat-mono">@r.Code</td>
+                        <td data-label="Status"><span class="mat-pill @(r.Status == DriftKing.Game.RoomStatus.Running ? "mat-pill--warn" : "mat-pill--ok")">@DriftKing.Pages.Admin.IndexModel.StatusName(r.Status)</span></td>
+                        <td data-label="Strecke">@r.Settings.Map.Name</td>
+                        <td data-label="Modus">@Looks.ModeName(r.Settings.Mode)</td>
+                        <td data-label="Fahrer" class="mat-num mat-mono">@r.Humans</td>
+                        <td data-label="Bots" class="mat-num mat-mono">@r.Seats.Count(s => s.IsBot)</td>
+                        <td data-label="Art" class="mat-hide-sm">@(r.Settings.CompetitionName ?? (r.Settings.IsSolo ? "Solo" : r.Settings.IsPrivate ? "Privat" : "Öffentlich"))</td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+</section>
+
+<div class="mat-actions dk-gap">
+    <a class="mat-btn mat-btn--primary" href="/driftking/" target="_blank" rel="noopener">@Ui.Icon("external")<span>Spiel öffnen</span></a>
+</div>

@@ -1,0 +1,57 @@
+@page "/Admin/DriftKing/System"
+@model DriftKing.Pages.Admin.SystemModel
+@{
+    ViewData["Title"] = "Einstellungen";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Einstellungen", null) };
+    ViewData["Width"] = "narrow";
+}
+<partial name="_Assets" />
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+
+    <div data-tabs>
+        <md-tab-group label="Bereiche der Einstellungen">
+            <md-tab-button panel="system-play" icon="gamepad" active="true">Spiel</md-tab-button>
+            <md-tab-button panel="system-economy" icon="yen">Wirtschaft</md-tab-button>
+            <md-tab-button panel="system-info" icon="info">Info</md-tab-button>
+        </md-tab-group>
+
+        <md-tab-panel id="system-play" active="true">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    <md-field name="MaxPlayers" kind="number" label="Höchstens Fahrer pro Raum" required value="@Model.MaxPlayers" min="2" max="8" />
+                    <md-field name="GuestsCreateRooms" kind="switch" label="Gäste dürfen öffentliche Räume eröffnen" value="@Model.GuestsCreateRooms.ToString()" />
+                    <md-field name="MaxPointsPerSecond" kind="number" label="Plausibilität: höchstens Punkte pro Sekunde" required value="@Model.MaxPointsPerSecond" min="1000" max="100000"
+                              hint="Mehr Punkte als Sekunden × Grenze werden gekappt und der Lauf markiert." />
+                    <md-field name="Announcement" kind="textarea" label="Ankündigung im Hauptmenü" value="@Model.Announcement" maxlength="500" rows="3" optional="true" />
+                </div>
+            </div>
+        </md-tab-panel>
+
+        <md-tab-panel id="system-economy">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    <md-field name="StartMoney" kind="number" label="Startgeld neuer Fahrer (Yen)" required value="@Model.StartMoney" min="0" />
+                    <md-field name="RewardFactor" kind="number" label="Preisgeld der Läufe (Prozent)" required value="@Model.RewardFactor" min="0" max="1000"
+                              hint="100 = normal, 200 = doppelt (z. B. für ein Event-Wochenende)." />
+                </div>
+            </div>
+        </md-tab-panel>
+
+        <md-tab-panel id="system-info">
+            <div class="mat-card">
+                <div class="mat-card__body">
+                    <dl class="mat-kv">
+                        <dt>Version</dt><dd class="mat-mono">@AppInfo.Version</dd>
+                        <dt>Protokoll</dt><dd class="mat-mono">@DriftKingModule.Protocol</dd>
+                        <dt>Gestartet</dt><dd class="mat-mono">@Ui.Stamp(AppInfo.Started)</dd>
+                        <dt>Laufzeit</dt><dd class="mat-mono">.NET @Environment.Version</dd>
+                    </dl>
+                </div>
+            </div>
+        </md-tab-panel>
+    </div>
+
+    <md-buttons save="Speichern" back="/Admin/DriftKing" />
+</form>

@@ -1,0 +1,49 @@
+@page "/Admin/DriftKing/Cars"
+@model DriftKing.Pages.Admin.Cars.IndexModel
+@{
+    ViewData["Title"] = "Autos";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Autos", null) };
+}
+<partial name="_Assets" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("car", Model.Toolbar.Total == 0 ? "Der Händler ist leer" : "Kein Auto gefunden", Model.Toolbar.Total == 0 ? "Ohne Autos kein Drift. Lege das erste an." : "Ändere die Suche oder die Filter.", Model.Toolbar.Total == 0, "/Admin/DriftKing/Cars/Edit", "Neues Auto", Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="Autos">
+            <thead>
+                <tr><th scope="col" class="mat-num mat-hide-sm">#</th><th scope="col">Auto</th><th scope="col" class="mat-hide-sm">Karosserie</th><th scope="col">Antrieb</th><th scope="col" class="mat-num">Leistung</th><th scope="col" class="mat-num mat-hide-sm">Grip</th><th scope="col" class="mat-num mat-hide-sm">Lenkung</th><th scope="col" class="mat-num">Preis</th><th scope="col" class="mat-num">Level</th><th scope="col" class="mat-num mat-hide-sm">Besitzer</th><th scope="col">Status</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Items)
+                {
+                    <tr>
+                        <td data-label="#" class="mat-num mat-mono mat-hide-sm">@c.SortOrder</td>
+                        <td data-label="Auto"><span class="dk-swatch" style="background:@c.DefaultPaint"></span><a href="/Admin/DriftKing/Cars/Edit?id=@c.Id">@c.Name</a></td>
+                        <td data-label="Karosserie" class="mat-hide-sm">@Looks.BodyName(c.Body)</td>
+                        <td data-label="Antrieb">@Looks.DriveName(c.Drive)</td>
+                        <td data-label="Leistung" class="mat-num mat-mono">@c.Power</td>
+                        <td data-label="Grip" class="mat-num mat-mono mat-hide-sm">@c.Grip</td>
+                        <td data-label="Lenkung" class="mat-num mat-mono mat-hide-sm">@c.Steering</td>
+                        <td data-label="Preis" class="mat-num mat-mono">@(c.Price == 0 ? "Start" : $"{Ui.Number(c.Price, "N0")} ¥")</td>
+                        <td data-label="Level" class="mat-num mat-mono">@c.UnlockLevel</td>
+                        <td data-label="Besitzer" class="mat-num mat-mono mat-hide-sm">@Model.Owners.GetValueOrDefault(c.Id)</td>
+                        <td data-label="Status">@if (c.IsEnabled) { <span class="mat-pill mat-pill--ok">Im Handel</span> } else { <span class="mat-pill mat-pill--plain">Aus</span> }</td>
+                        <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Admin/DriftKing/Cars/Edit?id=@c.Id" aria-label="@c.Name bearbeiten" data-tip="Bearbeiten">@Ui.Icon("edit")</a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+
+    <div class="mat-actions">
+        <a class="mat-btn mat-btn--primary" href="/Admin/DriftKing/Cars/Edit">@Ui.Icon("plus")<span>Neues Auto</span></a>
+    </div>
+</div>

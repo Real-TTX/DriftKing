@@ -1,0 +1,62 @@
+@page "/Admin/DriftKing/Runs/Edit"
+@model DriftKing.Pages.Admin.Runs.EditModel
+@{
+    var r = Model.Run!;
+    var title = $"{Looks.ModeName(r.Mode)} · {r.Code}";
+    ViewData["Title"] = title;
+    ViewData["PageSub"] = $"{r.MapKey} · {DriftKing.Pages.Admin.Runs.IndexModel.StatusName(r.Status)}";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Läufe", "/Admin/DriftKing/Runs"), (r.Code, null) };
+}
+<partial name="_Assets" />
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+
+    <div class="mat-card">
+        <div class="mat-card__body">
+            <dl class="mat-kv">
+                <dt>Strecke</dt><dd class="mat-mono">@r.MapKey</dd>
+                <dt>Modus</dt><dd>@Looks.ModeName(r.Mode) · @(r.Mode == GameMode.Race ? $"{r.Laps} Runden" : r.Mode == GameMode.Score ? $"{r.DurationS} s" : "ohne Uhr")</dd>
+                <dt>Art</dt><dd>@(r.CompetitionId is not null ? "Wettbewerb" : r.IsOnline ? "Online-Raum" : "Solo")</dd>
+                <dt>Start</dt><dd class="mat-mono">@Ui.Stamp(r.StartDate)</dd>
+                <dt>Ende</dt><dd class="mat-mono">@Ui.Stamp(r.EndDate)</dd>
+                <dt>Kennung</dt><dd class="mat-mono">@r.Token</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="mat-card dk-gap">
+        <div class="mat-card__head"><h2 class="mat-card__title">Ergebnis</h2></div>
+        @if (r.Entries.Count == 0)
+        {
+            <div class="mat-card__body"><p class="mat-muted">Kein Ergebnis – der Lauf wurde nicht beendet.</p></div>
+        }
+        else
+        {
+            <md-table caption="Ergebnis">
+                <thead>
+                    <tr><th scope="col" class="mat-num">Platz</th><th scope="col">Fahrer</th><th scope="col" class="mat-hide-sm">Auto</th><th scope="col" class="mat-num">Punkte</th><th scope="col" class="mat-num">Zeit</th><th scope="col" class="mat-num mat-hide-sm">Beste Kette</th><th scope="col" class="mat-num mat-hide-sm">Max. Winkel</th><th scope="col" class="mat-num">Yen</th><th scope="col" class="mat-num mat-hide-sm">XP</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in r.Entries.OrderBy(e => e.Place))
+                    {
+                        <tr>
+                            <td data-label="Platz" class="mat-num"><span class="dk-place dk-place--@e.Place">@e.Place</span></td>
+                            <td data-label="Fahrer">@if (e.PlayerId is { } pid) { <a href="/Admin/DriftKing/Players/Edit?id=@pid">@e.Name</a> } else { @e.Name } @if (e.IsBot) { <span class="mat-pill mat-pill--plain">Bot</span> } @if (e.Flagged) { <span class="mat-pill mat-pill--warn" data-tip="Ergebnis war nicht plausibel und wurde gekappt">gekappt</span> }</td>
+                            <td data-label="Auto" class="mat-hide-sm">@e.CarName</td>
+                            <td data-label="Punkte" class="mat-num mat-mono">@Plausibility.Describe(e.Score)</td>
+                            <td data-label="Zeit" class="mat-num mat-mono">@(e.TimeMs is { } t ? TimeSpan.FromMilliseconds(t).ToString(@"m\:ss\.fff") : e.Finished ? "–" : "DNF")</td>
+                            <td data-label="Beste Kette" class="mat-num mat-mono mat-hide-sm">@Plausibility.Describe(e.BestCombo)</td>
+                            <td data-label="Max. Winkel" class="mat-num mat-mono mat-hide-sm">@Ui.Number(e.MaxAngle, "0.0")°</td>
+                            <td data-label="Yen" class="mat-num mat-mono">@Ui.Number(e.Money, "N0")</td>
+                            <td data-label="XP" class="mat-num mat-mono mat-hide-sm">@e.Xp</td>
+                        </tr>
+                    }
+                </tbody>
+            </md-table>
+        }
+    </div>
+
+    <md-buttons back="/Admin/DriftKing/Runs" delete-handler="@(r.Status == RunStatus.Running ? null : "Delete")" delete-label="Löschen"
+                delete-confirm="Diesen Lauf aus dem Verlauf löschen? Gewonnenes Geld und Erfahrung behalten die Fahrer." />
+</form>

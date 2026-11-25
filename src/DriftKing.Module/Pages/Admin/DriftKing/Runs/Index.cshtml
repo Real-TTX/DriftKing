@@ -1,0 +1,43 @@
+@page "/Admin/DriftKing/Runs"
+@model DriftKing.Pages.Admin.Runs.IndexModel
+@{
+    ViewData["Title"] = "Läufe";
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Läufe", null) };
+}
+<partial name="_Assets" />
+
+<div class="mat-list">
+    <partial name="_Toolbar" model="Model.Toolbar" />
+
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_Empty" model="@(new EmptyStateModel("flag", Model.Toolbar.Total == 0 ? "Noch keine Läufe" : "Kein Lauf gefunden", Model.Toolbar.Total == 0 ? "Jeder gestartete Lauf steht hier – solo, online und Wettbewerbe." : "Ändere die Suche oder die Filter.", false, null, null, Model.Toolbar.UrlReset()))" />
+    }
+    else
+    {
+        <md-table caption="Läufe">
+            <thead>
+                <tr><th scope="col">Start</th><th scope="col">Strecke</th><th scope="col">Modus</th><th scope="col" class="mat-hide-sm">Code</th><th scope="col" class="mat-num">Fahrer</th><th scope="col" class="mat-num mat-hide-sm">Bots</th><th scope="col">Sieger</th><th scope="col">Status</th><th scope="col"><span class="mat-sr-only">Aktionen</span></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Items)
+                {
+                    var winner = r.Entries.Where(e => e.Place == 1).FirstOrDefault();
+                    <tr>
+                        <td data-label="Start" class="mat-mono"><a href="/Admin/DriftKing/Runs/Edit?id=@r.Id">@Ui.Stamp(r.StartDate)</a></td>
+                        <td data-label="Strecke">@Model.MapName(r.MapKey)</td>
+                        <td data-label="Modus">@Looks.ModeName(r.Mode) @if (r.CompetitionId is not null) { <span class="mat-pill mat-pill--plain">Wettbewerb</span> } else if (r.IsOnline) { <span class="mat-pill mat-pill--plain">Online</span> }</td>
+                        <td data-label="Code" class="mat-mono mat-hide-sm">@r.Code</td>
+                        <td data-label="Fahrer" class="mat-num mat-mono">@r.Humans</td>
+                        <td data-label="Bots" class="mat-num mat-mono mat-hide-sm">@r.Bots</td>
+                        <td data-label="Sieger">@(winner?.Name ?? "–")</td>
+                        <td data-label="Status"><span class="mat-pill @(r.Status == RunStatus.Finished ? "mat-pill--ok" : r.Status == RunStatus.Running ? "mat-pill--warn" : "mat-pill--plain")">@DriftKing.Pages.Admin.Runs.IndexModel.StatusName(r.Status)</span></td>
+                        <td class="mat-table__cell-actions"><div class="mat-table__actions"><a class="mat-btn mat-btn--ghost mat-btn--icon mat-btn--sm" href="/Admin/DriftKing/Runs/Edit?id=@r.Id" aria-label="Lauf ansehen" data-tip="Ansehen">@Ui.Icon("eye")</a></div></td>
+                    </tr>
+                }
+            </tbody>
+        </md-table>
+    }
+
+    <partial name="_Pager" model="Model.Pager" />
+</div>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de" data-app="driftking">
+<head>
+    <meta charset="utf-8" />
+    <!-- one static page: served by the plugin at /driftking/ (with the version filled in) and by the app shell from its own files -->
+    <base href="/driftking/" />
+    <meta name="matgame-game" content="driftking" />
+    <meta name="matgame-version" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0b0a18" />
+    <meta name="description" content="DriftKing – Nacht-Drift auf Bergpass, Parkdeck, Hafen und im Neon-Viertel: eigene Autos, Tuning, Wettbewerbe und Mehrspieler." />
+    <title>DriftKing</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+    <link rel="preload" href="fonts/anton-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/hud.css" />
+    <link rel="stylesheet" href="css/menu.css" />
+    <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js" } }</script>
+    <script src="lib/signalr/signalr.min.js" defer></script>
+</head>
+<body data-screen="boot">
+    <!-- the 3D picture fills the window; everything else lies on top of it -->
+    <div id="dk-stage" class="stage" aria-hidden="true"></div>
+    <div id="dk-hud" class="hud" hidden></div>
+    <header id="dk-top" class="top" hidden></header>
+    <main id="dk-menu" class="menu" hidden></main>
+    <div id="dk-overlay" class="overlay" hidden></div>
+    <div id="dk-loading" class="loading-layer" hidden><div class="loader"><span>LÄDT …</span></div></div>
+    <div id="dk-toasts" class="toasts" aria-live="polite"></div>
+    <div id="dk-boot" class="boot"><img src="img/logo/driftking-logo-dark.svg" alt="DriftKing" /><span>Reifen werden vorgewärmt …</span></div>
+    <noscript>DriftKing braucht JavaScript und WebGL.</noscript>
+    <script type="module" src="js/game/main.js"></script>
+</body>
+</html>

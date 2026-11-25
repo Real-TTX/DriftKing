@@ -1,0 +1,74 @@
+@page "/Admin/DriftKing/Cars/Edit"
+@model DriftKing.Pages.Admin.Cars.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Neues Auto" : Model.Name;
+    ViewData["Crumbs"] = new List<(string, string?)> { ("Administration", "/Admin"), ("DriftKing", "/Admin/DriftKing"), ("Autos", "/Admin/DriftKing/Cars"), (Model.IsNew ? "Neu" : Model.Name, null) };
+    ViewData["Width"] = "narrow";
+}
+<partial name="_Assets" />
+
+<form class="mat-form" method="post" novalidate>
+    <partial name="_FormSummary" model="ViewData.ModelState" />
+
+    <div data-tabs>
+        <md-tab-group label="Bereiche des Autos">
+            <md-tab-button panel="car-general" icon="car" active="true">Allgemein</md-tab-button>
+            <md-tab-button panel="car-values" icon="gauge">Werte</md-tab-button>
+            <md-tab-button panel="car-shop" icon="yen">Handel</md-tab-button>
+        </md-tab-group>
+
+        <md-tab-panel id="car-general" active="true">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form">
+                    <md-field name="Name" label="Name" required value="@Model.Name" maxlength="60" />
+                    <md-field name="Key" label="Schlüssel" required value="@Model.Key" maxlength="24" mono="true" hint="Kleinbuchstaben und Ziffern; bleibt fest." />
+                    <md-field name="Description" kind="textarea" label="Beschreibung" value="@Model.Description" maxlength="400" rows="2" optional="true" />
+                    <md-field name="Body" kind="select" label="Karosserie (3D-Modell)" value="@Model.Body" options="Model.Bodies" />
+                    <md-field name="Drive" kind="radios" label="Antrieb" value="@Model.Drive.ToString()" options="Model.Drives" />
+                    <md-field name="DefaultPaint" kind="colour" label="Werkslackierung" value="@Model.DefaultPaint" options="Model.Paints" />
+                </div>
+            </div>
+        </md-tab-panel>
+
+        <md-tab-panel id="car-values">
+            <div class="mat-card">
+                <div class="mat-card__head"><h2 class="mat-card__title">Werte (1 bis 10)</h2></div>
+                <div class="mat-card__body mat-form mat-grid mat-grid--2">
+                    <md-field name="Power" kind="number" label="Leistung" required value="@Model.Power" min="1" max="10" />
+                    <md-field name="Grip" kind="number" label="Grip" required value="@Model.Grip" min="1" max="10" />
+                    <md-field name="Weight" kind="number" label="Gewicht" required value="@Model.Weight" min="1" max="10" hint="Schwer = träger, aber stabil." />
+                    <md-field name="Steering" kind="number" label="Lenkeinschlag" required value="@Model.Steering" min="1" max="10" hint="Mehr Einschlag = größere Driftwinkel." />
+                </div>
+            </div>
+            @if (Model.Spec is { } s)
+            {
+                <div class="mat-card dk-gap">
+                    <div class="mat-card__head"><h2 class="mat-card__title">So fährt es sich (ohne Tuning)</h2></div>
+                    <div class="mat-card__body">
+                        <dl class="mat-kv">
+                            <dt>Leistung</dt><dd class="mat-mono">@s.PowerKw kW (@Ui.Number(Math.Round(s.PowerKw * 1.36)) PS)</dd>
+                            <dt>Spitze</dt><dd class="mat-mono">@s.TopSpeedKmh km/h</dd>
+                            <dt>Gewicht</dt><dd class="mat-mono">@s.MassKg kg</dd>
+                            <dt>Grip vorn / hinten</dt><dd class="mat-mono">@Ui.Number(s.GripFront, "0.000") / @Ui.Number(s.GripRear, "0.000")</dd>
+                            <dt>Lenkeinschlag</dt><dd class="mat-mono">@Ui.Number(s.SteerLockDeg)°</dd>
+                        </dl>
+                    </div>
+                </div>
+            }
+        </md-tab-panel>
+
+        <md-tab-panel id="car-shop">
+            <div class="mat-card">
+                <div class="mat-card__body mat-form mat-grid mat-grid--2">
+                    <md-field name="Price" kind="number" label="Preis (Yen)" required value="@Model.Price" min="0" hint="0 = Startauto für neue Fahrer." />
+                    <md-field name="UnlockLevel" kind="number" label="Ab Level" required value="@Model.UnlockLevel" min="1" max="50" />
+                    <md-field name="SortOrder" kind="number" label="Reihenfolge" required value="@Model.SortOrder" />
+                    <md-field name="IsEnabled" kind="switch" label="Im Handel" value="@Model.IsEnabled.ToString()" />
+                </div>
+            </div>
+        </md-tab-panel>
+    </div>
+
+    <md-buttons save="@(Model.IsNew ? "Anlegen" : "Speichern")" back="/Admin/DriftKing/Cars" delete-handler="@(Model.IsNew ? null : "Delete")" delete-label="Löschen"
+                delete-confirm="@($"„{Model.Name}“ aus dem Handel nehmen und löschen? Wer es schon hat, behält es.")" />
+</form>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <base href="/driftking/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>DriftKing · Probefahrt</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/hud.css" />
+    <style>
+        #info { position: fixed; left: 50%; bottom: 2px; transform: translateX(-50%); z-index: 50; font: 11px/1.3 var(--dk-mono); color: #fff; background: rgba(0,0,0,.5); padding: 2px 8px; border-radius: 4px; white-space: pre; pointer-events: none; }
+        #pause { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(11,10,24,.6); font: 32px var(--dk-display); }
+    </style>
+    <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js" } }</script>
+</head>
+<body>
+    <!-- drive.html?map=pass|deck|harbor|city&body=coupe&mode=freeride|score|race&bots=3&time=night|dusk&quality=low|medium|high
+         &duration=120&laps=2&autopilot=1&goals=1&camera=chase|near|hood|orbit&echo=1  – a run without a server (the own car with the keyboard or the autopilot);
+         echo=1 adds a remote seat that replays the own car 1 s later through run.remote (tests the network path) -->
+    <div id="dk-stage" class="stage"></div>
+    <div id="dk-hud" class="hud" hidden></div>
+    <div id="pause" hidden>PAUSE – Esc</div>
+    <div id="info"></div>
+    <script type="module">
+        import { settings } from './js/game/settings.js';
+        import { createStage } from './js/game/render/stage.js';
+        import { startRun } from './js/game/run/run.js';
+        import { mapDef } from './js/game/world/world.js';
+        import { sampleCar, SAMPLE_BODIES } from './dev/samples.js';
+
+        const q = new URLSearchParams(location.search);
+        if (q.get('quality')) settings.set({ quality: q.get('quality') });
+        if (q.get('camera') && q.get('camera') !== 'orbit') settings.set({ camera: q.get('camera') });
+        const stage = createStage(document.getElementById('dk-stage'));
+        const key = q.get('map') ?? 'city';
+        const def = await mapDef(key);
+        const mode = q.get('mode') ?? 'score';
+        const bots = Number(q.get('bots') ?? 3);
+        const body = q.get('body') ?? 'coupe';
+        const seats = [{ seat: 0, name: 'Du', kind: 'me', car: sampleCar(body, 0) }];
+        const names = ['Kaito', 'Rin', 'Sora', 'Yuna', 'Haru', 'Mio', 'Ren'];
+        for (let k = 0; k < bots; k++) {
+            seats.push({ seat: k + 1, name: names[k % names.length], kind: 'bot', skill: 0.35 + (k / Math.max(1, bots - 1)) * 0.6, car: sampleCar(SAMPLE_BODIES[(k + 1) % SAMPLE_BODIES.length], k + 1) });
+        }
+        if (q.get('echo')) seats.push({ seat: 9, name: 'Echo', kind: 'remote', car: sampleCar('muscle', 5) });
+        const pause = document.getElementById('pause');
+        let paused = false;
+        const finished = [];
+        const run = await startRun(stage, {
+            map: { key, name: def.name, timeOfDay: q.get('time') ?? 'night' },
+            mode,
+            laps: Number(q.get('laps') ?? def.defaultLaps),
+            durationS: Number(q.get('duration') ?? 90),
+            seats,
+            simulateBots: true,
+            countdownAt: q.get('nocount') ? Date.now() - 10 : null,
+            goals: q.get('goals') ? (mode === 'race' ? { metric: 'time', bronze: 240000, silver: 200000, gold: 170000 } : { metric: 'score', bronze: 20000, silver: 45000, gold: 80000 }) : null,
+            hud: document.getElementById('dk-hud'),
+            autopilot: q.get('autopilot') === '1',
+            events: {
+                state(seat, packed) {
+                    if (seat === 0 && q.get('echo')) setTimeout(() => run.remote(9, [packed[0] + 1000, ...packed.slice(1)]), 1000 + Math.random() * 60);
+                },
+                finish(seat, result) {
+                    finished.push(`${seat}: ${result.score} P · ${result.timeMs} ms`);
+                    console.log('finish', seat, JSON.stringify(result));
+                },
+                pause() {
+                    paused = !paused;
+                    run.setPaused(paused);
+                    pause.hidden = !paused;
+                },
+            },
+        });
+        window.run = run;
+        const info = document.getElementById('info');
+        setInterval(() => {
+            const top = run.standings().slice(0, 3).map(s => `${s.name} ${s.score}`).join(' · ');
+            info.textContent = `${stage.fps.toFixed(0)} fps · calls ${stage.renderer.info.render.calls} · tris ${stage.renderer.info.render.triangles} · ${top}${finished.length ? ' · done ' + finished.length : ''}`;
+        }, 250);
+        if (q.get('camera') === 'orbit') setTimeout(() => run.finishNow(), 200);
+        window.__ready = true;
+    </script>
+</body>
+</html>

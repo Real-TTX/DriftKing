@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <base href="/driftking/" />
+    <title>DriftKing · Garage-Vorschau</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <style>
+        #info { position: fixed; left: 10px; top: 10px; z-index: 5; font: 12px/1.4 var(--dk-mono); color: #fff; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; }
+        #bodies { position: fixed; left: 10px; bottom: 10px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; }
+        #bodies button { font: 13px var(--dk-ui); padding: 6px 10px; border-radius: 6px; border: 1px solid #fff3; background: #0008; color: #fff; }
+    </style>
+    <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js" } }</script>
+</head>
+<body>
+    <!-- garage.html?body=coupe&index=0  (or ?backdrop=city: the menu backdrop of that map) -->
+    <div id="dk-stage" class="stage"></div>
+    <div id="info"></div>
+    <div id="bodies"></div>
+    <script type="module">
+        import { settings } from './js/game/settings.js';
+        import { createStage } from './js/game/render/stage.js';
+        import { createGarageScene } from './js/game/scenes/garage.js';
+        import { createBackdrop } from './js/game/scenes/backdrop.js';
+        import { sampleCar, SAMPLE_BODIES } from './dev/samples.js';
+
+        const q = new URLSearchParams(location.search);
+        if (q.get('quality')) settings.set({ quality: q.get('quality') });
+        const stage = createStage(document.getElementById('dk-stage'));
+        if (q.get('backdrop')) {
+            await createBackdrop(stage, { map: q.get('backdrop') });
+        } else {
+            const garage = await createGarageScene(stage);
+            let index = Number(q.get('index') ?? 0);
+            garage.show(sampleCar(q.get('body') ?? 'coupe', index));
+            for (const body of SAMPLE_BODIES) {
+                const b = document.createElement('button');
+                b.textContent = body;
+                b.onclick = () => garage.show(sampleCar(body, ++index));
+                document.getElementById('bodies').appendChild(b);
+            }
+            window.garage = garage;
+        }
+        setInterval(() => (document.getElementById('info').textContent = `${stage.fps.toFixed(0)} fps · calls ${stage.renderer.info.render.calls}`), 300);
+        window.__ready = true;
+    </script>
+</body>
+</html>

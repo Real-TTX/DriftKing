@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The rules of DriftKing without a server: the entities (plain classes), the catalogue (cars, maps, competitions), tuning, prizes and levels,
+    the plausibility of results, the room of a run (lobby, countdown, states, results) and its messages. Used by the plugin (DriftKing.Module, online)
+    and by the offline game of the app (DriftKing.Local). No ASP.NET, no database. The maps are the browser's data/maps.json (embedded for the checks).
+  -->
+  <PropertyGroup>
+    <RootNamespace>DriftKing</RootNamespace>
+    <AssemblyName>DriftKing.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\DriftKing.Module\wwwroot\data\maps.json" LogicalName="DriftKing.maps.json" Condition="Exists('..\DriftKing.Module\wwwroot\data\maps.json')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DriftKing.Module" />
+    <InternalsVisibleTo Include="DriftKing.Local" />
+    <InternalsVisibleTo Include="DriftKing.Tests" />
+  </ItemGroup>
+
+</Project>
