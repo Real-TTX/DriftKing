@@ -14,7 +14,7 @@ It runs in four ways from one code base:
 - **On a MatGame master** (Docker, port 2770, every game): the player app at `/driftking/`, API `/driftking/api`, hub `/driftking/hub`, admin `/Admin/DriftKing`.
   MatGame compiles DriftKing in when `../DriftKing` exists (`GameDriftKing` in MatGame.csproj, like NightShift).
 - **Its own image** (`ghcr.io/real-ttx/driftking`, port **2771**): the MatGame host with only DriftKing (`Dockerfile`, `MATGAME_PORT=2771`, `MATGAME_GAMES=driftking`).
-  Note: MatGame's own local stack has its pgAdmin on 2771 too – both local stacks cannot run at the same time.
+  MatGame's own local stack keeps its pgAdmin on 2790, so both local stacks run side by side.
 - **In the Windows app** (MatGame.Shell) online against a master the player chooses (default `MatGameDefaultServer` in `Directory.Build.props`).
 - **In the app offline**: `DriftKing.Local` plays the server's part (local guest, bots, `profile.json`).
 

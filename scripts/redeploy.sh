@@ -11,15 +11,22 @@ if [ ! -d "$matgame" ]; then
     exit 1
 fi
 
-clean=""
+clean=0
+whole=0
 for arg in "$@"; do
     case "$arg" in
         --clean) clean=1 ;;
-        --matgame) exec sh "$matgame/scripts/redeploy.sh" ${clean:+--clean} ;;
+        --matgame) whole=1 ;;
     esac
 done
 
+if [ "$whole" = 1 ]; then
+    if [ "$clean" = 1 ]; then exec sh "$matgame/scripts/redeploy.sh" --clean; fi
+    exec sh "$matgame/scripts/redeploy.sh"
+fi
+
 cd "$root"
-if [ -n "$clean" ]; then docker compose -f docker-compose.local.yml down -v; fi
-docker compose -f docker-compose.local.yml up -d --build
-echo "DriftKing: http://localhost:2771/driftking/  ·  Admin: http://localhost:2771/Admin/DriftKing  ·  pgAdmin: http://localhost:2778"
+if [ "$clean" = 1 ]; then docker compose -f docker-compose.local.yml down -v --remove-orphans; fi
+docker compose -f docker-compose.local.yml build --build-arg "BuildDate=$(date -u +%Y%m%d)" web
+docker compose -f docker-compose.local.yml up -d --remove-orphans
+echo "DriftKing: http://localhost:2771/driftking/  |  Admin: http://localhost:2771/Admin/DriftKing  |  pgAdmin: http://localhost:2778"

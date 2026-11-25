@@ -29,13 +29,20 @@ if ($MatGame) {
 
 Push-Location $root
 try {
+    # Windows PowerShell 5.1 turns the progress lines docker writes to stderr into errors: judge by the exit code.
+    $ErrorActionPreference = 'Continue'
     $compose = @('compose', '-f', 'docker-compose.local.yml')
     if ($Clean) {
-        docker @compose down -v
+        docker @compose down -v --remove-orphans
     }
-    docker @compose up -d --build
-    if ($LASTEXITCODE -ne 0) { throw 'docker compose failed' }
-    Write-Host 'DriftKing: http://localhost:2771/driftking/  ·  Admin: http://localhost:2771/Admin/DriftKing  ·  pgAdmin: http://localhost:2778'
+
+    $date = (Get-Date).ToUniversalTime().ToString('yyyyMMdd')
+    docker @compose build --build-arg "BuildDate=$date" web
+    if ($LASTEXITCODE -ne 0) { throw 'docker compose build ist fehlgeschlagen.' }
+
+    docker @compose up -d --remove-orphans
+    if ($LASTEXITCODE -ne 0) { throw 'docker compose ist fehlgeschlagen.' }
+    Write-Host 'DriftKing: http://localhost:2771/driftking/  |  Admin: http://localhost:2771/Admin/DriftKing  |  pgAdmin: http://localhost:2778'
 }
 finally {
     Pop-Location
