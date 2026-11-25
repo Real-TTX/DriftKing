@@ -5,7 +5,7 @@ Guidance for working in this repository. Keep it in sync with the code.
 ## What DriftKing is
 
 A 3D night street-drift game in the browser, in the spirit of Japanese drift culture (touge, parking decks, harbour, neon city) – **the names, maps,
-cars and art are our own: never copy a film, a game, real car brands or characters**. Deliberately stylised low-poly (performance first, not photoreal).
+cars and art are our own: never copy a film, a game, real car brands or characters**. Realistic night look on medium/high (PBR materials, reflections, bloom, real lights, detailed cars and maps – docs/RENDERING.md); low quality stays as cheap as the old low-poly look.
 Modes free ride / score attack / race, four maps (`pass`, `deck`, `harbor`, `city`), a garage (eight cars, tuning, paint, neon, decals), competitions
 with medals (admin-managed), bots, online rooms, a rich HUD (speed, rpm/gear, drift angle, pedal positions, steering, chain/multiplier, minimap).
 

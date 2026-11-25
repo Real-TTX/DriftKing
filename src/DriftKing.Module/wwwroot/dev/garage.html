@@ -7,29 +7,37 @@
     <link rel="stylesheet" href="css/base.css" />
     <style>
         #info { position: fixed; left: 10px; top: 10px; z-index: 5; font: 12px/1.4 var(--dk-mono); color: #fff; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; }
-        #bodies { position: fixed; left: 10px; bottom: 10px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; }
-        #bodies button { font: 13px var(--dk-ui); padding: 6px 10px; border-radius: 6px; border: 1px solid #fff3; background: #0008; color: #fff; }
+        #bodies, #qualities { position: fixed; left: 10px; bottom: 10px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; }
+        #qualities { left: auto; right: 10px; }
+        #bodies button, #qualities button { font: 13px var(--dk-ui); padding: 6px 10px; border-radius: 6px; border: 1px solid #fff3; background: #0008; color: #fff; }
+        #qualities button.active { border-color: #ff2e88; }
     </style>
     <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
 </head>
 <body>
-    <!-- garage.html?body=coupe&index=0  (or ?backdrop=city: the menu backdrop of that map) -->
+    <!-- garage.html?body=coupe&index=0&quality=medium  (or ?backdrop=city: the menu backdrop of that map)
+         the buttons bottom right switch the picture quality live (the scene rebuilds itself); window.garage.show(car) swaps the car -->
     <div id="dk-stage" class="stage"></div>
     <div id="info"></div>
     <div id="bodies"></div>
+    <div id="qualities"></div>
     <script type="module">
         import { settings } from './js/game/settings.js';
         import { createStage } from './js/game/render/stage.js';
-        import { createGarageScene } from './js/game/scenes/garage.js';
-        import { createBackdrop } from './js/game/scenes/backdrop.js';
+        import { stats as textureStats } from './js/game/render/textures.js';
         import { sampleCar, SAMPLE_BODIES } from './dev/samples.js';
 
         const q = new URLSearchParams(location.search);
         if (q.get('quality')) settings.set({ quality: q.get('quality') });
         const stage = createStage(document.getElementById('dk-stage'));
+        window.stage = stage;
+        window.settings = settings;
         if (q.get('backdrop')) {
-            await createBackdrop(stage, { map: q.get('backdrop') });
+            // the backdrop needs the maps (world/world.js): loaded only for this view
+            const { createBackdrop } = await import('./js/game/scenes/backdrop.js');
+            window.backdrop = await createBackdrop(stage, { map: q.get('backdrop'), timeOfDay: q.get('time') ?? 'night' });
         } else {
+            const { createGarageScene } = await import('./js/game/scenes/garage.js');
             const garage = await createGarageScene(stage);
             let index = Number(q.get('index') ?? 0);
             garage.show(sampleCar(q.get('body') ?? 'coupe', index));
@@ -40,8 +48,24 @@
                 document.getElementById('bodies').appendChild(b);
             }
             window.garage = garage;
+            window.sampleCar = sampleCar;
         }
-        setInterval(() => (document.getElementById('info').textContent = `${stage.fps.toFixed(0)} fps · calls ${stage.renderer.info.render.calls}`), 300);
+        const qualities = document.getElementById('qualities');
+        for (const quality of ['low', 'medium', 'high']) {
+            const b = document.createElement('button');
+            b.textContent = quality;
+            b.dataset.quality = quality;
+            b.onclick = () => settings.set({ quality });
+            qualities.appendChild(b);
+        }
+        const mark = () => qualities.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.quality === settings.get().quality));
+        settings.onChange(mark);
+        mark();
+        setInterval(() => {
+            const info = stage.renderer.info;
+            document.getElementById('info').textContent = `${stage.quality} · ${stage.fps.toFixed(0)} fps · calls ${info.render.calls} · tris ${(info.render.triangles / 1000).toFixed(0)}k`
+                + ` · geo ${info.memory.geometries} · tex ${info.memory.textures} · gen ${(textureStats.bytes / 1048576).toFixed(1)} MB`;
+        }, 300);
         window.__ready = true;
     </script>
 </body>

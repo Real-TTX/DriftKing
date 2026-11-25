@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <base href="/driftking/" />
+    <title>DriftKing · Auto-Vorschau</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <style>
+        #info { position: fixed; left: 10px; top: 10px; z-index: 5; font: 12px/1.4 var(--dk-mono); color: #fff; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; white-space: pre; }
+        #bodies { position: fixed; left: 10px; bottom: 10px; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; }
+        #bodies button { font: 13px var(--dk-ui); padding: 6px 10px; border-radius: 6px; border: 1px solid #fff3; background: #0008; color: #fff; }
+    </style>
+    <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
+</head>
+<body>
+    <!-- cars.html?view=row|close&body=coupe&index=0&quality=low|medium|high&time=night|dusk&env=night|garage
+         &angle=35&dist=6&height=1.4&tx=0&ty=0.62&tz=0&yaw=0&orbit=1&far=1&steer=0.3&brake=1&reverse=1&speed=0
+         &paint=%23ff2e88&rims=%23c9ccd6&neon=%2329e7ff|none&decal=stripes&number=7&levels=5,5,5,5,5
+         – the car viewer: all six bodies side by side (row) or one close up, on a wet night street under the real sky, reflections and lamps -->
+    <div id="dk-stage" class="stage"></div>
+    <div id="info"></div>
+    <div id="bodies"></div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { settings } from './js/game/settings.js';
+        import { createStage } from './js/game/render/stage.js';
+        import { materialsFor, trimMaterials } from './js/game/render/materials.js';
+        import { stats as textureStats } from './js/game/render/textures.js';
+        import { environmentMap } from './js/game/render/environment.js';
+        import { LightRig, LIGHT_PRESETS } from './js/game/render/lights.js';
+        import { buildEnvironment } from './js/game/world/env.js';
+        import { metricUVs, GlowPoints } from './js/game/render/kit.js';
+        import { Vehicle } from './js/game/car/vehicle.js';
+        import { sampleCar, SAMPLE_BODIES } from './dev/samples.js';
+
+        const q = new URLSearchParams(location.search);
+        if (q.get('quality')) settings.set({ quality: q.get('quality') });
+        const quality = settings.get().quality;
+        const time = q.get('time') ?? 'night';
+        const viewMode = q.get('view') ?? 'row';
+        const stage = createStage(document.getElementById('dk-stage'));
+        trimMaterials(quality);
+        const scene = new THREE.Scene();
+        const env = buildEnvironment(scene, { timeOfDay: time, quality });
+        scene.environment = quality === 'low' ? null : environmentMap(q.get('env') ?? time, { size: quality === 'high' ? 512 : 256 });
+        scene.environmentIntensity = env.palette.envIntensity;
+        scene.userData.post = { ...env.palette.post };
+        if (q.get('exposure')) scene.userData.post.exposure = Number(q.get('exposure'));
+        const rig = new LightRig(scene, quality);
+        const mat = materialsFor(quality);
+        const add = (geometry, material, x = 0, y = 0, z = 0) => {
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            return mesh;
+        };
+        // the street: wet asphalt, a kerb and pavement behind, a wall; street lamps with real lights
+        add(metricUVs(new THREE.PlaneGeometry(60, 30).rotateX(-Math.PI / 2)), mat.asphalt({ wet: 0.55 }), 0, 0, 2);
+        add(metricUVs(new THREE.BoxGeometry(60, 0.15, 0.3).translate(0, 0.075, -6.15)), mat.concrete({ seams: false }));
+        add(metricUVs(new THREE.PlaneGeometry(60, 4).rotateX(-Math.PI / 2).translate(0, 0.15, -8.3)), mat.tiles({ scale: 0.6 }));
+        add(metricUVs(new THREE.BoxGeometry(60, 7, 0.4).translate(0, 3.5, -10.5)), mat.facade({ lit: 0.45 }));
+        const glows = new GlowPoints();
+        for (const [x, preset] of [[-9, 'sodium'], [0, 'led'], [9, 'sodium']]) {
+            add(new THREE.CylinderGeometry(0.09, 0.12, 8.5, 12).translate(x, 4.25, -6.8), mat.painted({ color: 0x3a3f46 }));
+            add(new THREE.BoxGeometry(0.5, 0.12, 1.4).translate(x, 8.5, -5.9), mat.painted({ color: 0x2a2e33 }));
+            const lens = LIGHT_PRESETS[preset].color;
+            add(new THREE.BoxGeometry(0.4, 0.03, 1.0).translate(x, 8.43, -5.7), mat.emissive(lens, 12));
+            glows.add(x, 8.3, -5.7, 3.2, lens);
+            rig.add({ x, y: 8.3, z: -5.4, ...LIGHT_PRESETS[preset], dir: { x: 0, y: -1, z: 0.35 } });
+        }
+        for (const [x, c] of [[-5, 0xff2e88], [5, 0x29e7ff]]) {
+            add(new THREE.BoxGeometry(2.6, 0.1, 0.1).translate(x, 4.0, -10.2), mat.emissive(c, 6));
+            rig.add({ x, y: 3.8, z: -9.6, ...LIGHT_PRESETS.neon, color: c, dir: { x: 0, y: -0.5, z: 1 } });
+        }
+        const points = glows.build({ fogFar: 900 });
+        if (points) scene.add(points);
+
+        // the cars
+        const levels = q.get('levels') ? Object.fromEntries(['engine', 'turbo', 'suspension', 'tires', 'steering'].map((k, i) => [k, Number(q.get('levels').split(',')[i] ?? 0)])) : undefined;
+        const viewOf = (body, index) => {
+            const v = sampleCar(body, index, levels);
+            for (const k of ['paint', 'rims', 'decal']) if (q.get(k)) v[k] = q.get(k);
+            if (q.get('neon')) v.neon = q.get('neon') === 'none' ? null : q.get('neon');
+            if (q.get('number')) v.number = Number(q.get('number'));
+            return v;
+        };
+        const started = performance.now();
+        const cars = [];
+        const index = Number(q.get('index') ?? 0);
+        const bodies = viewMode === 'row' ? SAMPLE_BODIES : [q.get('body') ?? 'coupe'];
+        bodies.forEach((body, k) => {
+            const vehicle = new Vehicle(viewOf(body, index + k));
+            const x = viewMode === 'row' ? (k - (bodies.length - 1) / 2) * 2.7 : 0;
+            const state = { x, y: 0, z: 0, yaw: viewMode === 'row' ? 0.5 : Number(q.get('yaw') ?? 0), steer: Number(q.get('steer') ?? 0), forward: Number(q.get('speed') ?? 0),
+                braking: q.get('brake') ? 1 : 0, lateralG: 0, accel: 0, pitch: 0, rearSlip: 0, frontSlip: 0 };
+            if (q.get('reverse')) state.forward = -2;
+            vehicle.update(0, state);
+            if (q.get('far')) {
+                vehicle.model.userData.lod.body.levels[1].distance = 0.01;
+                vehicle.model.userData.lod.wheels.levels[1].distance = 0.01;
+            }
+            vehicle.model.userData.beam.visible = viewMode !== 'row';
+            scene.add(vehicle.model);
+            // the close-up's headlights light the street (a pool source, as the run does for other cars)
+            if (viewMode === 'row' || q.get('nohead')) {
+                cars.push({ vehicle, state });
+                return;
+            }
+            const head = vehicle.model.userData.lightMounts.head;
+            const c = new THREE.Vector3().addVectors(head[0], head[1]).multiplyScalar(0.5);
+            vehicle.model.updateMatrixWorld(true);
+            const from = c.clone().applyMatrix4(vehicle.model.matrixWorld);
+            const to = new THREE.Vector3(c.x, 0, c.z + 18).applyMatrix4(vehicle.model.matrixWorld);
+            rig.add({ ...LIGHT_PRESETS.headlight, x: from.x, y: from.y, z: from.z, target: to, priority: 1.2 });
+            cars.push({ vehicle, state });
+        });
+        const buildMs = performance.now() - started;
+
+        const camera = new THREE.PerspectiveCamera(viewMode === 'row' ? 40 : 38, 1, 0.1, 1400);
+        const forward = new THREE.Vector3();
+        let angle = THREE.MathUtils.degToRad(Number(q.get('angle') ?? (viewMode === 'row' ? 0 : 35)));
+        const dist = Number(q.get('dist') ?? (viewMode === 'row' ? 15 : 6.2));
+        const height = Number(q.get('height') ?? (viewMode === 'row' ? 3.4 : 1.45));
+        stage.show({
+            scene,
+            camera,
+            update(dt) {
+                if (q.get('orbit')) angle += dt * 0.25;
+                const target = viewMode === 'row' ? new THREE.Vector3(0, 0.5, 0) : new THREE.Vector3(Number(q.get('tx') ?? 0), Number(q.get('ty') ?? 0.62), Number(q.get('tz') ?? 0));
+                camera.position.set(target.x + Math.sin(angle) * dist, height, target.z + Math.cos(angle) * dist);
+                camera.lookAt(target);
+                for (const c of cars) {
+                    if (q.get('speed')) c.vehicle.update(dt, c.state);
+                }
+                env.update(dt, camera.position);
+                rig.update(camera.position, dt, camera.getWorldDirection(forward));
+            },
+        });
+        for (const body of SAMPLE_BODIES) {
+            const b = document.createElement('button');
+            b.textContent = body;
+            b.onclick = () => {
+                q.set('view', 'close');
+                q.set('body', body);
+                location.search = q.toString();
+            };
+            document.getElementById('bodies').appendChild(b);
+        }
+        setInterval(() => (document.getElementById('info').textContent =
+            `${quality} · cars ${Math.round(buildMs)} ms · textures ${(textureStats.bytes / 1e6).toFixed(1)} MB · ` +
+            `${stage.fps.toFixed(0)} fps · calls ${stage.renderer.info.render.calls} · tris ${stage.renderer.info.render.triangles} · lights ${rig.active().length}/${rig.size}`), 250);
+        window.cars = cars;
+        window.__ready = true;
+    </script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <base href="/driftking/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DriftKing · Klang-Prüfstand</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <style>
+        html, body { overflow: auto; height: auto; min-height: 100%; }
+        body { padding: 14px 18px 30px; font-size: 13px; }
+        h1 { font: 26px/1 var(--dk-display); letter-spacing: .04em; margin: 0 0 4px; color: var(--dk-pink); text-shadow: var(--dk-glow-pink); }
+        h2 { font: 15px/1.2 var(--dk-display); letter-spacing: .06em; margin: 0 0 8px; color: var(--dk-cyan); }
+        .lead { color: var(--dk-muted); margin: 0 0 12px; max-width: 1100px; }
+        .grid { display: grid; grid-template-columns: 360px 1fr; gap: 14px; align-items: start; }
+        .panel { background: var(--dk-night-2); border: 1px solid var(--dk-line); border-radius: var(--dk-radius); padding: 12px 14px; }
+        .row { display: grid; grid-template-columns: 112px 1fr 64px; gap: 8px; align-items: center; margin: 5px 0; }
+        .row output { font: 12px var(--dk-mono); text-align: right; color: var(--dk-text); }
+        .row label { color: var(--dk-muted); }
+        input[type=range] { width: 100%; accent-color: var(--dk-pink); }
+        select { background: var(--dk-night-3); color: var(--dk-text); border: 1px solid var(--dk-line); border-radius: 6px; padding: 3px 6px; font: inherit; }
+        .buttons { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        button { background: var(--dk-night-3); color: var(--dk-text); border: 1px solid var(--dk-line); border-radius: 6px; padding: 5px 10px; font: 600 12px var(--dk-ui); cursor: pointer; }
+        button:hover { border-color: var(--dk-cyan); }
+        button.main { background: var(--dk-pink-deep); border-color: var(--dk-pink); }
+        button.on { border-color: var(--dk-green); color: var(--dk-green); }
+        .check { display: flex; gap: 14px; flex-wrap: wrap; margin: 6px 0; color: var(--dk-muted); }
+        .check input { accent-color: var(--dk-cyan); }
+        #readout { font: 12px/1.5 var(--dk-mono); color: var(--dk-text); white-space: pre-wrap; margin-top: 8px; }
+        canvas { display: block; width: 100%; background: #07060f; border: 1px solid var(--dk-line); border-radius: 6px; }
+        .plots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .plots figure { margin: 0; }
+        .plots figure.wide { grid-column: 1 / -1; }
+        .plots figcaption { color: var(--dk-muted); font-size: 11px; margin: 0 0 3px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+        td, th { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--dk-line); vertical-align: top; }
+        th { color: var(--dk-muted); font-weight: 600; }
+        td.ok { color: var(--dk-green); font-weight: 700; }
+        td.bad { color: var(--dk-red); font-weight: 700; }
+        td.value { font: 11px/1.4 var(--dk-mono); color: var(--dk-muted); }
+        #summary { font: 14px var(--dk-display); letter-spacing: .05em; margin-left: 8px; }
+        #info { display: none; }
+    </style>
+    <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
+</head>
+<body>
+    <!-- audio.html?test=1 – the test bench of js/game/audio.js: sliders for an engine voice (rpm, throttle, slip, speed, distance, stereo),
+         a scripted test drive with the real car physics (and three other cars passing by), impacts, shifts, the menu blips and the music,
+         a live spectrum; and the offline self-test (OfflineAudioContext, no gesture needed: test=1 runs it at once, #info holds the numbers) -->
+    <h1>Klang-Prüfstand</h1>
+    <p class="lead">Alles synthetisch (WebAudio, keine Samples). Erst „Ton an“ klicken – Browser spielen Ton nur nach einer Geste. Der Selbsttest rendert offline
+        und misst: Zündfrequenz gegen Drehzahl, Quietschen gegen Schlupf, Begrenzer, Schaltdelle, Turbo, Knallen (auch synchron zu den Auspuffflammen),
+        Abstand, Stereo, Doppler, Nachhall des Raums, Pegel und Übersteuern – und eine Probefahrt mit der echten Fahrphysik.</p>
+    <div class="grid">
+        <div class="panel">
+            <h2>Stimme</h2>
+            <div class="buttons">
+                <button id="start" class="main">Ton an</button>
+                <button id="drive">Probefahrt (echte Fahrphysik)</button>
+                <button id="music">Musik</button>
+            </div>
+            <div class="row"><label for="body">Karosserie</label><select id="body">
+                <option value="coupe">Coupé (Reihen-4)</option><option value="hatch">Kompakt (Reihen-4)</option><option value="sedan">Limousine (Reihen-6)</option>
+                <option value="fastback">Fastback (Reihen-6)</option><option value="wide">Widebody GT (Reihen-6)</option><option value="muscle">Muscle (V8)</option>
+            </select><output></output></div>
+            <div class="row"><label for="turbo">Turbo-Stufe</label><input id="turbo" type="range" min="0" max="5" step="1" value="2" /><output></output></div>
+            <div class="row"><label for="rpm">Drehzahl</label><input id="rpm" type="range" min="700" max="8100" step="10" value="2500" /><output></output></div>
+            <div class="row"><label for="throttle">Gas</label><input id="throttle" type="range" min="0" max="1" step="0.01" value="0.3" /><output></output></div>
+            <div class="row"><label for="slip">Schlupf (m/s)</label><input id="slip" type="range" min="0" max="20" step="0.1" value="0" /><output></output></div>
+            <div class="row"><label for="speed">Tempo (km/h)</label><input id="speed" type="range" min="0" max="260" step="1" value="60" /><output></output></div>
+            <div class="row"><label for="distance">Abstand (m)</label><input id="distance" type="range" min="0" max="150" step="0.5" value="0" /><output></output></div>
+            <div class="row"><label for="pan">Stereo</label><input id="pan" type="range" min="-1" max="1" step="0.05" value="0" /><output></output></div>
+            <div class="row"><label for="volume">Lautstärke</label><input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" /><output></output></div>
+            <div class="check">
+                <label><input id="own" type="checkbox" checked /> eigenes Auto</label>
+                <label><input id="limiter" type="checkbox" /> Begrenzer</label>
+                <label><input id="rivals" type="checkbox" /> drei Gegner</label>
+            </div>
+            <div class="buttons">
+                <button id="up">Hochschalten</button>
+                <button id="down">Runterschalten</button>
+                <button id="lift">Gas weg</button>
+            </div>
+            <div class="buttons">
+                <button data-hit="3.5">Treffer leicht</button>
+                <button data-hit="9">Treffer mittel</button>
+                <button data-hit="18">Treffer schwer</button>
+            </div>
+            <div class="buttons">
+                <button data-ui="click">Klick</button><button data-ui="buy">Kauf</button><button data-ui="countdown">Countdown</button><button data-ui="go">Start</button>
+                <button data-ui="bank">Punkte</button><button data-ui="medal">Medaille</button><button data-ui="error">Fehler</button>
+            </div>
+            <div id="readout"></div>
+        </div>
+        <div>
+            <div class="panel">
+                <h2>Spektrum (live)</h2>
+                <canvas id="live" width="1600" height="300"></canvas>
+            </div>
+            <div class="panel" style="margin-top:14px">
+                <h2>Selbsttest (offline gerendert) <button id="test">Selbsttest starten</button><span id="summary"></span></h2>
+                <div class="plots">
+                    <figure><figcaption>Reihen-4 bei 5000 U/min: Spektrum, Striche = Zündfrequenz und Vielfache</figcaption><canvas id="plotSpectrum" width="800" height="240"></canvas></figure>
+                    <figure><figcaption>Reifen: Energie 0,5–3,5 kHz über dem Schlupf (m/s)</figcaption><canvas id="plotSqueal" width="800" height="240"></canvas></figure>
+                    <figure><figcaption>Begrenzer: RMS je 4 ms (0,6 s)</figcaption><canvas id="plotLimiter" width="800" height="240"></canvas></figure>
+                    <figure><figcaption>Schlimmster Fall: Spitze je 20 ms, Linie = Decke −0,3 dBFS</figcaption><canvas id="plotWorst" width="800" height="240"></canvas></figure>
+                    <figure class="wide"><figcaption>Probefahrt Coupé (Reihen-4, Turbo 2), echte Fahrphysik: Spektrogramm 40 Hz – 10 kHz über 16 s (Anfahren und Schalten · Gas weg · Drift · Gas weg · Sprint · Bremsen)</figcaption><canvas id="plotDrive-coupe" width="1600" height="260"></canvas></figure>
+                    <figure class="wide"><figcaption>Probefahrt Muscle (V8, Turbo 2)</figcaption><canvas id="plotDrive-muscle" width="1600" height="260"></canvas></figure>
+                </div>
+                <table><thead><tr><th></th><th>Prüfung</th><th>Messung</th></tr></thead><tbody id="results"></tbody></table>
+            </div>
+        </div>
+    </div>
+    <div id="info"></div>
+    <script type="module">
+        import { audio, ENGINE_LAYOUTS, BODY_LAYOUT } from './js/game/audio.js';
+        import { settings } from './js/game/settings.js';
+        import { CarPhysics } from './js/game/car/physics.js';
+        import { showcaseCar } from './js/game/car/showcase.js';
+        import { runAudioTests, driveControls, physicsInput, DRIVE_SECONDS } from './dev/audio-test.js';
+
+        const q = new URLSearchParams(location.search);
+        const $ = id => document.getElementById(id);
+        const sliders = ['turbo', 'rpm', 'throttle', 'slip', 'speed', 'distance', 'pan', 'volume'];
+        $('volume').value = settings.get().volume;
+
+        function showValues() {
+            for (const id of sliders) {
+                const v = Number($(id).value);
+                $(id).nextElementSibling.textContent = id === 'throttle' || id === 'pan' || id === 'volume' ? v.toFixed(2) : String(Math.round(v * 10) / 10);
+            }
+            $('body').nextElementSibling.textContent = BODY_LAYOUT[$('body').value];
+        }
+        document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', showValues));
+        showValues();
+        $('volume').addEventListener('input', () => settings.set({ volume: Number($('volume').value) }));
+
+        // ---- live: one voice from the sliders (or the test drive), optionally three rivals passing by
+        let voice = null;
+        let rivals = [];
+        let analyser = null;
+        let gear = 3;
+        let rpmNow = 2500;
+        let liftUntil = 0;
+        let driving = null;
+
+        function build() {
+            voice?.dispose();
+            rivals.forEach(r => r.voice.dispose());
+            rivals = [];
+            if (!audio.unlocked) return;
+            const turbo = Number($('turbo').value);
+            voice = audio.engine({ body: $('body').value, turbo, own: $('own').checked });
+            if ($('rivals').checked) {
+                rivals = ['muscle', 'sedan', 'hatch'].map((body, k) => ({
+                    voice: audio.engine({ body, turbo: k + 1 }),
+                    physics: new CarPhysics(showcaseCar(body, k + 1).spec, { assist: 0.65, transmission: 'auto' }),
+                    x: -40 - k * 35,
+                    z: [7, 16, 28][k],
+                    clock: 2.5 * (k + 1),
+                }));
+            }
+            if (!analyser) {
+                analyser = audio.mixer.context.createAnalyser();
+                analyser.fftSize = 8192;
+                analyser.smoothingTimeConstant = 0.6;
+                audio.mixer.output.connect(analyser);
+            }
+        }
+
+        $('start').addEventListener('click', () => {
+            audio.unlock();
+            const wait = setInterval(() => {
+                if (!audio.unlocked) return;
+                clearInterval(wait);
+                $('start').classList.add('on');
+                $('start').textContent = 'Ton läuft';
+                build();
+            }, 50);
+        });
+        for (const id of ['body', 'turbo', 'own', 'rivals']) $(id).addEventListener('change', build);
+        $('music').addEventListener('click', () => {
+            const on = !$('music').classList.contains('on');
+            $('music').classList.toggle('on', on);
+            audio.music(on);
+        });
+        $('up').addEventListener('click', () => {
+            if (gear >= 6) return;
+            gear++;
+            $('rpm').value = Math.max(900, Number($('rpm').value) * 0.74);
+            showValues();
+        });
+        $('down').addEventListener('click', () => {
+            if (gear <= 1) return;
+            gear--;
+            $('rpm').value = Math.min(8100, Number($('rpm').value) / 0.74);
+            showValues();
+        });
+        $('lift').addEventListener('click', () => (liftUntil = performance.now() + 700));
+        document.querySelectorAll('[data-hit]').forEach(b => b.addEventListener('click', () => voice?.impact(Number(b.dataset.hit))));
+        document.querySelectorAll('[data-ui]').forEach(b => b.addEventListener('click', () => audio.ui(b.dataset.ui)));
+
+        // the test drive: the real car physics on an endless flat plane with the script of the self-test (launch, shifts, lift, drift, lift, sprint, brake)
+        const scripted = driveControls;
+        function stepCar(car, dt) {
+            const before = car.clock % DRIVE_SECONDS;
+            car.clock += dt;
+            if (car.clock % DRIVE_SECONDS < before) car.physics.reset(0, 0, 0, 0);
+            car.physics.update(dt, scripted(car.clock), { groundAt: () => 0 });
+        }
+        $('drive').addEventListener('click', () => {
+            if (driving) {
+                driving = null;
+                $('drive').classList.remove('on');
+                return;
+            }
+            driving = { physics: new CarPhysics(showcaseCar($('body').value, 0).spec, { assist: 0.65, transmission: 'auto' }), clock: 0 };
+            $('drive').classList.add('on');
+        });
+
+        let last = performance.now();
+        function frame(now) {
+            const dt = Math.min(0.05, (now - last) / 1000);
+            last = now;
+            let state;
+            if (driving) {
+                stepCar(driving, dt);
+                state = physicsInput(driving.physics, scripted(driving.clock).throttle);
+            } else {
+                const target = Number($('rpm').value);
+                rpmNow += (target - rpmNow) * Math.min(1, dt * 14);
+                const lifting = now < liftUntil;
+                state = {
+                    rpm: rpmNow, throttle: lifting ? 0 : Number($('throttle').value), slip: Number($('slip').value), speed: Number($('speed').value) / 3.6,
+                    gear, limiter: $('limiter').checked, distance: Number($('distance').value), pan: Number($('pan').value),
+                };
+            }
+            voice?.update(state);
+            for (const r of rivals) {
+                stepCar(r, dt);
+                r.x += Math.max(8, r.physics.speed) * dt;
+                if (r.x > 90) r.x = -90;
+                const distance = Math.hypot(r.x, r.z);
+                r.voice.update({ rpm: r.physics.rpm, throttle: scripted(r.clock).throttle, slip: r.physics.rearSlip, speed: r.physics.speed, gear: r.physics.gear, distance, pan: r.x / distance });
+            }
+            const s = voice?.stats;
+            $('readout').textContent = [
+                `Drehzahl ${Math.round(state.rpm)} U/min · Gang ${state.gear ?? '–'} · Gas ${state.throttle.toFixed(2)}`,
+                `Schlupf ${state.slip.toFixed(1)} m/s · Tempo ${Math.round((state.speed ?? 0) * 3.6)} km/h${state.limiter ? ' · BEGRENZER' : ''}`,
+                `Zündfrequenz ${((state.rpm / 60) * ((ENGINE_LAYOUTS[BODY_LAYOUT[$('body').value]].cylinders) / 2)).toFixed(1)} Hz · Turbowelle ${(voice?.shaft ?? 0).toFixed(2)}`,
+                s ? `Knaller ${s.pops} · Abblasen ${s.blowOffs} · Schalten ${s.shifts} · Zündunterbrechungen ${s.cuts} · Treffer ${s.impacts}` : 'Ton aus – „Ton an“ klicken',
+            ].join('\n');
+            drawLive(state);
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        // ---- drawing
+        const LOG_MIN = Math.log10(20);
+        const LOG_MAX = Math.log10(12000);
+        const xOf = (hz, w) => ((Math.log10(Math.max(hz, 20)) - LOG_MIN) / (LOG_MAX - LOG_MIN)) * w;
+
+        function grid(g, w, h) {
+            g.fillStyle = '#07060f';
+            g.fillRect(0, 0, w, h);
+            g.strokeStyle = 'rgba(255,255,255,.08)';
+            g.fillStyle = 'rgba(255,255,255,.4)';
+            g.font = `${Math.round(h / 16)}px Inter, sans-serif`;
+            for (const hz of [50, 100, 200, 500, 1000, 2000, 5000, 10000]) {
+                const x = xOf(hz, w);
+                g.beginPath();
+                g.moveTo(x, 0);
+                g.lineTo(x, h);
+                g.stroke();
+                g.fillText(hz >= 1000 ? `${hz / 1000}k` : `${hz}`, x + 3, h - 5);
+            }
+        }
+
+        const liveData = new Float32Array(4096);
+        function drawLive(state) {
+            const canvas = $('live');
+            const g = canvas.getContext('2d');
+            const { width: w, height: h } = canvas;
+            grid(g, w, h);
+            const f = (state.rpm / 60) * (ENGINE_LAYOUTS[BODY_LAYOUT[$('body').value]].cylinders / 2);
+            g.strokeStyle = 'rgba(255,176,32,.55)';
+            for (let k = 1; k <= 6; k++) {
+                g.beginPath();
+                g.moveTo(xOf(f * k, w), 0);
+                g.lineTo(xOf(f * k, w), h);
+                g.stroke();
+            }
+            if (!analyser) return;
+            analyser.getFloatFrequencyData(liveData);
+            const binHz = analyser.context.sampleRate / analyser.fftSize;
+            g.strokeStyle = '#29e7ff';
+            g.lineWidth = 2;
+            g.beginPath();
+            for (let i = 1; i < liveData.length; i++) {
+                const x = xOf(i * binHz, w);
+                const y = h - ((liveData[i] + 110) / 100) * h;
+                if (i === 1) g.moveTo(x, y);
+                else g.lineTo(x, y);
+            }
+            g.stroke();
+            g.lineWidth = 1;
+        }
+
+        function drawSpectrum(result) {
+            const canvas = $('plotSpectrum');
+            const g = canvas.getContext('2d');
+            const { width: w, height: h } = canvas;
+            grid(g, w, h);
+            g.strokeStyle = 'rgba(255,176,32,.6)';
+            for (let k = 1; k <= 8; k++) {
+                g.beginPath();
+                g.moveTo(xOf(result.f * k, w), 0);
+                g.lineTo(xOf(result.f * k, w), h);
+                g.stroke();
+            }
+            const { power, binHz } = result.spec;
+            let top = 0;
+            for (const p of power) top = Math.max(top, p);
+            g.strokeStyle = '#ff2e88';
+            g.beginPath();
+            for (let i = 1; i < power.length && i * binHz < 12000; i++) {
+                const y = h - ((10 * Math.log10(Math.max(power[i] / top, 1e-12)) + 80) / 80) * h;
+                if (i === 1) g.moveTo(xOf(i * binHz, w), y);
+                else g.lineTo(xOf(i * binHz, w), y);
+            }
+            g.stroke();
+        }
+
+        function drawSeries(id, plot) {
+            const canvas = $(id);
+            const g = canvas.getContext('2d');
+            const { width: w, height: h } = canvas;
+            g.fillStyle = '#07060f';
+            g.fillRect(0, 0, w, h);
+            const values = plot.values;
+            const max = Math.max(plot.ceiling ?? 0, ...values) * 1.08 || 1;
+            const min = plot.kind === 'bars' ? 0 : 0;
+            g.font = '13px Inter, sans-serif';
+            if (plot.kind === 'bars') {
+                const bw = w / values.length;
+                values.forEach((v, k) => {
+                    const bh = ((v - min) / (max - min)) * (h - 30);
+                    g.fillStyle = '#3ef08a';
+                    g.fillRect(k * bw + bw * 0.2, h - 20 - bh, bw * 0.6, bh);
+                    g.fillStyle = 'rgba(255,255,255,.6)';
+                    g.fillText(`${plot.labels[k]}`, k * bw + bw * 0.42, h - 5);
+                    g.fillText(`+${v.toFixed(1)} dB`, k * bw + bw * 0.25, h - 26 - bh);
+                });
+                return;
+            }
+            g.strokeStyle = '#29e7ff';
+            g.beginPath();
+            values.forEach((v, k) => {
+                const x = (k / (values.length - 1)) * w;
+                const y = h - (v / max) * (h - 10);
+                if (k === 0) g.moveTo(x, y);
+                else g.lineTo(x, y);
+            });
+            g.stroke();
+            if (plot.ceiling) {
+                g.strokeStyle = '#ff4040';
+                const y = h - (plot.ceiling / max) * (h - 10);
+                g.beginPath();
+                g.moveTo(0, y);
+                g.lineTo(w, y);
+                g.stroke();
+            }
+        }
+
+        /** Spectrogram on a log-frequency axis (40 Hz – 10 kHz), 80 dB of range under the loudest cell. */
+        function drawSpectrogram(id, data) {
+            const canvas = $(id);
+            const g = canvas.getContext('2d');
+            const { width: w, height: h } = canvas;
+            const image = g.createImageData(w, h);
+            let top = -Infinity;
+            for (const column of data.columns) for (const v of column) top = Math.max(top, v);
+            const lo = Math.log10(40);
+            const hi = Math.log10(10000);
+            const rows = Array.from({ length: h }, (_, y) => Math.round(10 ** (hi - (y / (h - 1)) * (hi - lo)) / data.binHz));
+            for (let x = 0; x < w; x++) {
+                const column = data.columns[Math.min(data.columns.length - 1, Math.floor((x / w) * data.columns.length))];
+                for (let y = 0; y < h; y++) {
+                    const a = Math.min(1, Math.max(0, (column[rows[y]] - top + 80) / 80));
+                    const k = (y * w + x) * 4;
+                    image.data[k] = 255 * Math.min(1, a * 1.5) ** 1.4;
+                    image.data[k + 1] = 255 * Math.max(0, a - 0.55) * 2.2;
+                    image.data[k + 2] = 255 * Math.min(1, 0.06 + a * 0.9 - Math.max(0, a - 0.75) * 1.5);
+                    image.data[k + 3] = 255;
+                }
+            }
+            g.putImageData(image, 0, 0);
+            g.fillStyle = 'rgba(255,255,255,.75)';
+            g.font = '13px Inter, sans-serif';
+            for (const hz of [100, 300, 1000, 3000]) {
+                const y = ((hi - Math.log10(hz)) / (hi - lo)) * (h - 1);
+                g.fillRect(0, y, 8, 1);
+                g.fillText(hz >= 1000 ? `${hz / 1000} kHz` : `${hz} Hz`, 10, y + 4);
+            }
+            for (let s = 2; s < DRIVE_SECONDS; s += 2) g.fillText(`${s} s`, (s / DRIVE_SECONDS) * w - 8, h - 4);
+        }
+
+        // ---- the self-test
+        async function selfTest() {
+            $('test').disabled = true;
+            $('results').innerHTML = '';
+            $('summary').textContent = ' läuft …';
+            const started = performance.now();
+            const lines = [];
+            const results = await runAudioTests(r => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="${r.pass ? 'ok' : 'bad'}">${r.pass ? '✓' : '✗'}</td><td>${r.group}: ${r.name}</td><td class="value"></td>`;
+                row.lastElementChild.textContent = r.value;
+                $('results').append(row);
+                lines.push(`${r.pass ? 'OK  ' : 'FAIL'} ${r.group}: ${r.name} – ${r.value}`);
+                if (r.f && r.name.startsWith('i4 · 5000')) drawSpectrum(r);
+                if (r.plot && r.group === 'Reifen') drawSeries('plotSqueal', r.plot);
+                if (r.plot && r.name.startsWith('Begrenzer')) drawSeries('plotLimiter', r.plot);
+                if (r.plot && r.name.startsWith('Schlimmster')) drawSeries('plotWorst', r.plot);
+                if (r.plot?.kind === 'spectrogram') drawSpectrogram(`plotDrive-${r.name.split(':')[0]}`, r.plot.data);
+            });
+            const passed = results.filter(r => r.pass).length;
+            const seconds = ((performance.now() - started) / 1000).toFixed(1);
+            $('summary').textContent = ` ${passed}/${results.length} bestanden (${seconds} s)`;
+            $('summary').style.color = passed === results.length ? 'var(--dk-green)' : 'var(--dk-red)';
+            $('info').textContent = [`Selbsttest ${passed}/${results.length} bestanden in ${seconds} s`, ...lines].join('\n');
+            window.__audioResults = results.map(({ group, name, pass, value }) => ({ group, name, pass, value }));
+            $('test').disabled = false;
+            return results;
+        }
+        $('test').addEventListener('click', selfTest);
+        window.__audioTest = selfTest;
+
+        if (q.get('test')) {
+            await selfTest();
+        }
+        window.__ready = true;
+    </script>
+</body>
+</html>

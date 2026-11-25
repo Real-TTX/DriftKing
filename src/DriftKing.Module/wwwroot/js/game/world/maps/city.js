@@ -1,203 +1,198 @@
-// DriftKing · maps/city.js – "Neon-Viertel": a closed street circuit around city blocks. Wide streets, raised sidewalks with kerbs (the walls),
-// facades with lit windows, invented neon signs, shop light on the pavement, crossings, a long sweeper. Flat at y = 0.
+// DriftKing · maps/city.js – "Neon-Viertel": a closed street circuit through a dense entertainment district at night. A wet four-lane street
+// with kerbs, gutters and tiled sidewalks behind a guard fence (the walls: just behind the kerb), narrow mixed-use buildings shoulder to shoulder
+// with shops, bars and restaurants on the ground floor and real windows above (city-facade.js, city-blocks.js), sign towers and neon
+// (city-signs.js), street furniture, crossings with traffic lights, utility poles and their wires (city-street.js), an elevated railway with
+// passing trains (city-rail.js), reflections of the lights in the wet road and steam from the manholes (city-fx.js). Flat at y = 0.
+// Draw calls: one per facade finish, one props batch, one emissive batch, one paint batch, one sign mesh, wires, reflections, steam, the
+// shared road/kerb/lamp/start-line builders and the two trains.
 
 import * as THREE from 'three';
-import { bandGeometry, buildRoadStrip, buildStartLine, courseEdges, ribbonGeometry, roadTexture } from '../road.js';
-import { buildingGeometry, buildingMesh, buildLamps, NEON_COLOURS, Signs, signAtlases, windowTexture } from '../props.js';
-import { canvasTexture, mergeGeometries } from '../../render/kit.js';
+import { buildKerbs, buildRoadStrip, buildStartLine, courseEdges, ribbonGeometry } from '../road.js';
+import { Batch, emissiveMaterial, pick, planarUVs, propsMaterial } from './city-kit.js';
+import { Facades } from './city-facade.js';
+import { CitySigns, NEON } from './city-signs.js';
+import { buildBlocks, SIDEWALK } from './city-blocks.js';
+import { buildStreet } from './city-street.js';
+import { CityFx } from './city-fx.js';
+import { buildRail, RAIL } from './city-rail.js';
 
-const SIDEWALK = 4.5;
+/** The guard fence along the kerb (lateral offset behind the road edge) and its post spacing. */
+const FENCE = 0.55;
 
 export function build(ctx) {
-    const { root, course, colliders, glows } = ctx;
+    const { root, course, colliders, quality } = ctx;
     const half = course.width / 2;
+    const props = new Batch();
+    const emissive = new Batch({ emissive: true });
+    const paint = new Batch();
+    const facades = new Facades(ctx);
+    const fx = new CityFx(ctx);
+    const signs = new CitySigns(ctx, { props, reflect: fx.reflect });
+    const wires = [];
+    const steam = [];
+    const crossings = crossingSpots(course);
+    // the two straights the railway crosses (z of the road under the viaduct)
+    const railRoads = [-120, 122];
+    const avoid = (x, z) => Math.abs(x - RAIL.x) < RAIL.half && z > RAIL.from - 20 && z < RAIL.to + 20;
+    const neonColour = random => pick(random, NEON);
 
-    // the ground between the blocks, the road and the raised sidewalks with their kerb faces
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x1b1a24 }));
-    ground.position.y = -0.05;
-    ground.receiveShadow = true;
-    root.add(ground);
-    root.add(buildRoadStrip(course, new THREE.MeshLambertMaterial({ map: roadTexture({ centre: '#f2c94c', seed: 9 }) })));
-    const paving = canvasTexture(128, 128, (c, w) => {
-        c.fillStyle = '#4a4856';
-        c.fillRect(0, 0, w, w);
-        c.strokeStyle = '#3a3846';
-        c.lineWidth = 3;
-        for (let k = 0; k <= 4; k++) {
-            c.beginPath();
-            c.moveTo(0, k * 32);
-            c.lineTo(w, k * 32);
-            c.moveTo(k * 32, 0);
-            c.lineTo(k * 32, w);
-            c.stroke();
-        }
-    }, { repeat: true });
-    const sidewalkMaterial = new THREE.MeshLambertMaterial({ map: paving });
-    root.add(new THREE.Mesh(mergeGeometries([
-        ribbonGeometry(course, half, half + SIDEWALK, { lift: 0.15, repeat: 2 }),
-        ribbonGeometry(course, -half - SIDEWALK, -half, { lift: 0.15, repeat: 2 }),
-    ]), sidewalkMaterial));
-    const kerb = courseEdges(course, 0, { every: 1 });
-    const kerbMaterial = new THREE.MeshLambertMaterial({ color: 0x8f8d9c, side: THREE.DoubleSide });
-    root.add(new THREE.Mesh(mergeGeometries([bandGeometry(kerb.left, 0, 0.16), bandGeometry(kerb.right, 0, 0.16)]), kerbMaterial));
-    // the walls: just behind the kerb (a car bounces off the kerb and the railing)
+    buildGround(ctx);
+    // the walls: just behind the kerb (a car bounces off the kerb and the fence)
     courseEdges(course, 0.35, { every: 2, colliders });
-    const rail = courseEdges(course, 0.55, { every: 2 });
-    const railMaterial = new THREE.MeshLambertMaterial({ color: 0xc9c7d6, side: THREE.DoubleSide });
-    root.add(new THREE.Mesh(mergeGeometries([bandGeometry(rail.left, 0.85, 0.95), bandGeometry(rail.right, 0.85, 0.95),
-        bandGeometry(rail.left, 0.45, 0.5), bandGeometry(rail.right, 0.45, 0.5)]), railMaterial));
+    buildFence(ctx, props, crossings);
+    buildStartLine(root, course, ctx.glows, { colour: 0x29e7ff, lights: ctx.lights, materials: ctx.materials });
 
-    buildStartLine(root, course, glows, { colour: 0x29e7ff });
-    buildCrossings(root, course);
-    buildStreetLamps(ctx);
-    buildBlocks(ctx);
-    return { flatY: 0 };
+    const propsMat = propsMaterial(quality);
+    const emissiveMat = emissiveMaterial();
+    const { fronts } = buildBlocks(ctx, { facades, props, emissive, signs, reflect: fx.reflect, avoid, neonColour });
+    buildStreet(ctx, { props, emissive, paint, signs, reflect: fx.reflect, wires, fronts, crossings, steam });
+    const rail = buildRail(ctx, { facades, props, emissive, wires, roads: railRoads, propsMaterial: propsMat, emissiveMaterial: emissiveMat });
+
+    facades.build(root);
+    // the big batches in squares of 128 m (frustum culling); the small ones whole
+    props.buildChunks(root, propsMat, 'props', 128);
+    emissive.buildChunks(root, emissiveMat, 'emissive', 192);
+    addMesh(root, paint.build(propsMaterial(quality, { polygonOffset: 2 })), 'paint');
+    signs.build(root);
+    if (wires.length > 0) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(wires, 3));
+        const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x0b0b0e }));
+        lines.name = 'wires';
+        root.add(lines);
+    }
+    fx.build(root, steam);
+
+    const signals = emissiveMat.userData.signals;
+    let time = 0;
+    return {
+        flatY: 0,
+        update(dt) {
+            time += dt;
+            facades.time.value = time;
+            fx.update(dt);
+            rail.update(dt);
+            updateSignals(signals, time);
+        },
+    };
 }
 
-/** Lamps on the sidewalks every 34 m, alternating sides, the arm over the road. */
-function buildStreetLamps({ root, course, glows, pools }) {
+function addMesh(root, mesh, name) {
+    if (!mesh) return;
+    mesh.name = name;
+    root.add(mesh);
+}
+
+/** Mid-block crossings on the long straights: in a gap of the dashed lane lines (dashes 5 m / 5 m from s = 0). */
+function crossingSpots(course) {
     const spots = [];
-    const d = course.width / 2 + 1.2;
-    let side = 1;
-    for (let s = 10; s < course.length; s += 34) {
-        const p = course.at(s);
-        const lx = p.tz * side;
-        const lz = -p.tx * side;
-        spots.push({ x: p.x + lx * d, y: 0.15, z: p.z + lz * d, yaw: Math.atan2(-lx, -lz) });
-        side = -side;
+    for (let s = 67.5; s < course.length - 10; s += 150) {
+        let straight = true;
+        for (let d = -12; d <= 12; d += 4) if (Math.abs(course.at(s + d).k) > 1 / 200) straight = false;
+        if (straight) spots.push(s);
     }
-    buildLamps(root, spots, glows, pools, { colour: 0xbfd8ff, height: 8.5, arm: 3, pool: 10, strength: 0.5 });
-}
-
-/** Zebra crossings on the long straights. */
-function buildCrossings(root, course) {
-    const stripes = [];
-    for (let s = 60; s < course.length; s += 150) {
-        const p = course.at(s);
-        if (Math.abs(p.k) > 1 / 200) continue;
-        const yaw = Math.atan2(p.tx, p.tz);
-        for (let k = -5; k <= 5; k++) {
-            const off = k * 1.2;
-            const g = new THREE.PlaneGeometry(0.6, 3.2).rotateX(-Math.PI / 2);
-            g.rotateY(yaw);
-            g.translate(p.x + p.tz * off, 0.035, p.z - p.tx * off);
-            stripes.push(g);
-        }
-    }
-    if (stripes.length === 0) return;
-    root.add(new THREE.Mesh(mergeGeometries(stripes), new THREE.MeshLambertMaterial({ color: 0xd8d6e2, polygonOffset: true, polygonOffsetFactor: -2 })));
+    return spots;
 }
 
 /**
- * The blocks: a row of buildings along both sides of the road (fronts behind the sidewalk), filler buildings further away, neon signs and shop
- * light on the fronts. A footprint never comes near another part of the road.
+ * The ground of the district: asphalt between the blocks, the wet street with its decals (lane dashes, wheel paths, drift marks – the solid
+ * lines and the crossings are city-street.js's), kerbs with gutters and drains, tiled sidewalks (raised 0.15 m).
  */
-function buildBlocks({ root, course, glows, pools, random, detail }) {
-    const facade = windowTexture(17, 0.42);
-    const signs = new Signs(glows);
-    const geometries = [];
-    const shopFronts = [];
-    const front = course.width / 2 + SIDEWALK + 0.4;
-    const clear = course.width / 2 + SIDEWALK;
-    const fits = (x, z, w, d, yaw) => {
-        const c = Math.cos(yaw);
-        const s = Math.sin(yaw);
-        for (const [u, v] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1], [0, 1], [-1, 0], [1, 0], [0, 0]]) {
-            const px = x + (u * w * c) / 2 + (v * d * s) / 2;
-            const pz = z - (u * w * s) / 2 + (v * d * c) / 2;
-            if (course.distanceTo(px, pz) < clear) return false;
-        }
-        return true;
-    };
-    for (const side of [1, -1]) {
-        let s = random() * 10;
-        while (s < course.length) {
-            const width = 12 + random() * 16;
-            const p = course.at(s + width / 2);
-            s += width + 0.8;
-            if (Math.abs(p.k) > 1 / 30) continue;
-            const depth = 14 + random() * 18;
-            const height = 10 + Math.pow(random(), 1.5) * 46;
-            const lx = p.tz * side;
-            const lz = -p.tx * side;
-            const cx = p.x + lx * (front + depth / 2);
-            const cz = p.z + lz * (front + depth / 2);
-            // the front (local +z) looks at the road
-            const yaw = Math.atan2(-lx, -lz);
-            if (!fits(cx, cz, width, depth, yaw)) continue;
-            geometries.push(buildingGeometry(width, height, depth, cx, 0, cz, yaw, random));
-            const fx = p.x + lx * (front - 0.05);
-            const fz = p.z + lz * (front - 0.05);
-            shopFronts.push({ x: fx, z: fz, yaw, width, colour: NEON_COLOURS[Math.floor(random() * NEON_COLOURS.length)] });
-            decorate(signs, pools, random, { x: fx, z: fz, lx, lz, yaw, width, height, colour: shopFronts[shopFronts.length - 1].colour });
-        }
-    }
-    // fillers behind the first row (inside the blocks and around), a little taller
-    const fillers = Math.round(140 * Math.min(1.3, detail));
-    for (let k = 0; k < fillers; k++) {
-        const x = -320 + random() * 640;
-        const z = -260 + random() * 520;
-        const w = 14 + random() * 22;
-        const d = 14 + random() * 22;
-        const yaw = Math.floor(random() * 4) * (Math.PI / 2);
-        if (!fits(x, z, w + 14, d + 14, yaw)) continue;
-        geometries.push(buildingGeometry(w, 16 + Math.pow(random(), 1.4) * 70, d, x, 0, z, yaw, random));
-    }
-    root.add(buildingMesh(geometries, facade, { colour: 0x7c7a92 }));
-    buildShopFronts(root, shopFronts);
-    signs.build(root, signAtlases(23));
+function buildGround(ctx) {
+    const { root, course } = ctx;
+    const half = course.width / 2;
+    const m = ctx.materials;
+    const ground = new THREE.Mesh(planarUVs(new THREE.PlaneGeometry(1600, 1600).rotateX(-Math.PI / 2)), m.asphalt({ wet: 0.45, color: 0xb8b8b8 }));
+    ground.position.y = -0.05;
+    ground.receiveShadow = true;
+    ground.name = 'ground';
+    root.add(ground);
+    root.add(buildRoadStrip(course, m.asphalt({ wet: 0.8, puddles: 0.4 }), {
+        lift: 0.02,
+        materials: m,
+        // the solid lines and the crossings are city-street.js's; low skips the wheel paths (they cost ~30 k triangles)
+        markings: { centre: null, edges: false, lanes: 2, wear: 0.45, grime: ctx.quality !== 'low', skids: 1, seed: 9 },
+    }));
+    buildKerbs(root, course, { materials: m, gutter: 0.35, drains: 24 });
+    const sidewalk = new THREE.Mesh(planarUVs(mergeSidewalks(course, half)), m.tiles({ color: 0x8e8a84 }));
+    sidewalk.receiveShadow = true;
+    sidewalk.name = 'sidewalks';
+    root.add(sidewalk);
 }
 
-/** A neon sign on a front: a tall one at a corner (sticking out) or a wide one above the shop, sometimes both; the shop light on the pavement. */
-function decorate(signs, pools, random, f) {
-    const tangentX = Math.cos(f.yaw);
-    const tangentZ = -Math.sin(f.yaw);
-    if (random() < 0.7 && f.height > 12) {
-        const along = (random() < 0.5 ? -1 : 1) * (f.width / 2 - 1.2);
-        const h = 6 + random() * 4;
-        // perpendicular to the front: readable for cars coming along the road
-        signs.add('tall', Math.floor(random() * 4), f.x + tangentX * along - f.lx * 0.9, 4 + h / 2 + random() * 3, f.z + tangentZ * along - f.lz * 0.9, 1.4, h, f.yaw + Math.PI / 2);
-    }
-    if (random() < 0.65) {
-        const w = Math.min(f.width - 2, 7 + random() * 3);
-        signs.add('wide', Math.floor(random() * 4), f.x - f.lx * 0.12, 4.6 + random() * 2.5, f.z - f.lz * 0.12, w, w / 4, f.yaw);
-    }
-    // the shop light on the sidewalk
-    pools.add(f.x - f.lx * 2.4, 0.15, f.z - f.lz * 2.4, f.width * 0.45, f.colour, 0.35);
+function mergeSidewalks(course, half) {
+    const left = ribbonGeometry(course, half + 0.18, half + SIDEWALK, { lift: 0.15 });
+    const right = ribbonGeometry(course, -half - SIDEWALK, -half - 0.18, { lift: 0.15 });
+    const positions = new Float32Array(left.attributes.position.count * 3 + right.attributes.position.count * 3);
+    positions.set(left.attributes.position.array, 0);
+    positions.set(right.attributes.position.array, left.attributes.position.array.length);
+    const offset = left.attributes.position.count;
+    const index = [...left.index.array, ...Array.from(right.index.array, i => i + offset)];
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setIndex(index);
+    g.computeVertexNormals();
+    left.dispose();
+    right.dispose();
+    return g;
 }
 
-/** Lit shop windows on the ground floor of the fronts (panes in dark frames, a neon awning line), tinted by the shop's colour. */
-function buildShopFronts(root, fronts) {
-    const texture = canvasTexture(256, 96, (c, w, h) => {
-        c.fillStyle = '#16141f';
-        c.fillRect(0, 0, w, h);
-        c.fillStyle = '#ffffff';
-        c.fillRect(0, 0, w, 8);
-        for (let k = 0; k < 4; k++) {
-            const g = c.createLinearGradient(0, 18, 0, h - 6);
-            g.addColorStop(0, '#fff3dc');
-            g.addColorStop(1, '#b89a78');
-            c.fillStyle = g;
-            c.fillRect(8 + k * 62, 18, 52, h - 26);
-            c.fillStyle = 'rgba(20,16,30,0.55)';
-            c.fillRect(8 + k * 62 + 10 + (k * 7) % 20, 40, 14, h - 48);
+/**
+ * The guard fence along both kerbs (white painted steel: posts every 2 m, a top rail and a middle rail), open for the crossings.
+ * Purely visual: the walls are the colliders of courseEdges.
+ */
+function buildFence(ctx, props, crossings) {
+    const { course, quality } = ctx;
+    const half = course.width / 2;
+    const low = quality === 'low';
+    const spacing = low ? 4 : 2;
+    const colour = 0xd2d4d6;
+    const o = { rough: 0.45, metal: 0.25 };
+    const sides = 3;
+    const L = course.length;
+    const gap = s => crossings.some(c => {
+        const d = Math.min(Math.abs(s - c), L - Math.abs(s - c));
+        return d < 3;
+    });
+    for (const side of [-1, 1]) {
+        const lateral = side * (half + FENCE);
+        let previous = null;
+        for (let s = 0; s <= L; s += spacing) {
+            const p = course.at(s);
+            const x = p.x + p.tz * lateral;
+            const z = p.z - p.tx * lateral;
+            if (gap(s)) {
+                previous = null;
+                continue;
+            }
+            props.cylinder(0.032, 0.032, 0.98, x, 0.15, z, colour, { ...o, open: true }, low ? 3 : 4);
+            if (previous) {
+                for (const y of [1.08, 0.62]) {
+                    if (low) props.add(railBand(previous, { x, z }, y, side), colour, o);
+                    else props.rod({ x: previous.x, y, z: previous.z }, { x, y, z }, y > 1 ? 0.03 : 0.02, colour, o, sides);
+                }
+            }
+            previous = { x, z };
         }
-    }, { repeat: true });
-    const geometries = [];
-    const colours = [];
-    for (const f of fronts) {
-        const g = new THREE.PlaneGeometry(f.width - 1.6, 2.8);
-        const uv = g.attributes.uv;
-        for (let k = 0; k < uv.count; k++) uv.setX(k, (uv.getX(k) * (f.width - 1.6)) / 7);
-        g.rotateY(f.yaw);
-        g.translate(f.x, 1.75, f.z);
-        const c = new THREE.Color(f.colour).lerp(new THREE.Color(0xffe6c0), 0.6).multiplyScalar(0.8);
-        const count = g.attributes.position.count;
-        for (let k = 0; k < count; k++) colours.push(c.r, c.g, c.b);
-        geometries.push(g);
     }
-    if (geometries.length === 0) return;
-    const merged = mergeGeometries(geometries);
-    merged.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-    root.add(new THREE.Mesh(merged, new THREE.MeshBasicMaterial({ map: texture, vertexColors: true })));
 }
+
+/** A flat rail between two fence posts (low): a band 6 cm tall facing the road (side +1: the road is to the right of a → b). */
+function railBand(a, b, y, side) {
+    const g = new THREE.BufferGeometry();
+    const p = side > 0 ? [a, b] : [b, a];
+    g.setAttribute('position', new THREE.Float32BufferAttribute([p[0].x, y - 0.03, p[0].z, p[1].x, y - 0.03, p[1].z, p[1].x, y + 0.03, p[1].z, p[0].x, y + 0.03, p[0].z], 3));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    g.computeVertexNormals();
+    return g;
+}
+
+/** The signal cycle: cars green 16 s, amber 3 s, red 14 s; pedestrians walk in the middle of the red, the green blinks before it ends. */
+function updateSignals(signals, time) {
+    const t = time % 33;
+    const car = signals.signalCar.value;
+    car.set(t < 16 ? 1 : 0, t >= 16 && t < 19 ? 1 : 0, t >= 19 ? 1 : 0);
+    const walk = t >= 20 && t < 29 ? 1 : t >= 29 && t < 31 ? (Math.floor(t * 4) % 2) : 0;
+    signals.signalWalk.value.set(walk, walk > 0 ? 0 : 1);
+}
+

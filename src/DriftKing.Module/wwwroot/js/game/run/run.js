@@ -3,7 +3,6 @@
 //   const run = await startRun(stage, { map, mode, laps, durationS, seats, simulateBots, countdownAt, goals, hud, events });
 // See the contract in the doc of startRun. Seats: 'me' (input), 'bot' (BotDriver here when simulateBots, else like a remote), 'remote' (run.remote).
 
-import * as THREE from 'three';
 import { settings } from '../settings.js';
 import { audio } from '../audio.js';
 import { createInput } from '../input.js';
@@ -15,13 +14,26 @@ import { BotDriver } from '../car/bot.js';
 import { Vehicle } from '../car/vehicle.js';
 import { Smoke } from '../fx/smoke.js';
 import { Skids } from '../fx/skids.js';
+import { Sparks } from '../fx/sparks.js';
+import { Backfires } from '../fx/flames.js';
+import { CarLights, HEADLIGHT_RESERVE } from '../fx/carlights.js';
+import { FxLighting } from '../fx/lighting.js';
+import { LampStreaks } from '../fx/streaks.js';
+import { exposureOf } from '../fx/common.js';
 import { DriftScore, DRIFT_MIN_ANGLE } from './drift.js';
 import { RunCamera } from './camera.js';
 
 const STATE_INTERVAL = 1 / 12;
 const REMOTE_DELAY = 100;
 const CHECKPOINTS = [0.25, 0.5, 0.75];
-const CAPACITY = { low: { smoke: 120, skids: 600 }, medium: { smoke: 260, skids: 1500 }, high: { smoke: 420, skids: 2600 } };
+const CAPACITY = {
+    low: { smoke: 110, skids: 600, sparks: 48 },
+    medium: { smoke: 280, skids: 1500, sparks: 120 },
+    high: { smoke: 440, skids: 2600, sparks: 200 },
+};
+/** The car's collision circles (car/physics.js): where along the car (m) and how wide – the sparks look for the wall there. */
+const BODY_CIRCLES = [1.45, 0, -1.45];
+const BODY_RADIUS = 0.92;
 const DOT_COLOURS = ['#29e7ff', '#ffb020', '#3ef08a', '#8b5cf6', '#ff7a1a', '#f4f2ff', '#ffe14a', '#7affd7'];
 
 /**
@@ -45,23 +57,42 @@ export async function startRun(stage, options) {
     const { map, mode, seats, simulateBots = true, goals = null, events = {} } = options;
     // the developer autopilot: the URL flag of the dev pages or localStorage 'driftking.autopilot' = '1' (end-to-end tests of the menus)
     const autopilot = options.autopilot === true || readAutopilot();
-    const world = await buildWorld(map.key, { timeOfDay: map.timeOfDay ?? 'night' });
+    const quality = settings.get().quality;
+    // pool lights for the other cars' headlights (the rig lights the nearest few; none on low)
+    const lightReserve = quality === 'low' ? 0 : Math.min(HEADLIGHT_RESERVE, Math.max(0, seats.length - 1));
+    const world = await buildWorld(map.key, { timeOfDay: map.timeOfDay ?? 'night', quality, lightReserve });
     const course = world.course;
     const scene = world.scene;
     const laps = options.laps ?? world.def.defaultLaps;
     const durationMs = (options.durationS ?? 120) * 1000;
-    const quality = settings.get().quality;
     const capacity = CAPACITY[quality] ?? CAPACITY.medium;
-    const skids = new Skids(capacity.skids);
-    const smoke = new Smoke(capacity.smoke, { colour: 0xa9a7c4, fogFar: world.env.palette.fogFar * 0.7 });
-    scene.add(skids.mesh, smoke.mesh);
+    const exposure = exposureOf(scene);
+    // the effects: rubber on the road, smoke lit like the scene, sparks, backfire; the cars' lamps light the road (rig) and the smoke
+    const lighting = new FxLighting(world);
+    const skids = new Skids(capacity.skids, { quality });
+    const smoke = new Smoke(capacity.smoke, { fogFar: world.env.palette.fogFar * 0.7, lighting, exposure, quality });
+    const sparks = new Sparks(capacity.sparks, { exposure });
+    const backfires = new Backfires(16, { exposure });
+    const carLights = new CarLights(world, quality, lighting);
+    // the lamps mirrored in the wet road (medium/high: the PBR road is wet there)
+    const streaks = quality === 'low' ? null : new LampStreaks(seats.length, { wetness: world.wetness ?? 0.4, exposure });
+    scene.add(skids.mesh, smoke.mesh, sparks.mesh, backfires.group);
+    if (streaks) scene.add(streaks.mesh);
     const rig = new RunCamera();
     rig.mode = settings.get().camera;
+    rig.colliders = world.colliders;
     audio.unlock();
 
     const cars = seats.map((seat, slot) => createCar(seat, slot));
     const me = cars.find(c => c.kind === 'me') ?? cars[0];
-    if (me.physics && quality !== 'low') addHeadlight(me);
+    rig.follow(me.vehicle.model);
+    smoke.focus = me.vehicle.model.position;
+    window.__fxDebug = { smoke, lighting, world, me, rig, sparks, backfires, skids };
+    for (const car of cars) carLights.add(car.vehicle.model, { own: car === me && !!me.physics, neon: car.view.neon ?? null });
+    const stateByModel = new Map();
+    const stateOf = model => stateByModel.get(model);
+    const carHits = [];
+    const lampList = [];
     const hud = createHud(options.hud, { mode, laps, durationS: durationMs / 1000, goals, course, mapName: world.name });
     const input = createInput({ touchHost: options.hud });
 
@@ -136,13 +167,6 @@ export async function startRun(stage, options) {
         };
     }
 
-    function addHeadlight(car) {
-        const light = new THREE.SpotLight(0xfff0d8, 60, 70, 0.55, 0.7, 1.3);
-        light.position.set(0, 0.9, 2.0);
-        light.target.position.set(0, 0, 22);
-        car.vehicle.model.add(light, light.target);
-    }
-
     // ---- sound: the own engine loud, three others by distance; audio may only start after a key or a touch
     const unlock = () => audio.unlock();
     addEventListener('keydown', unlock);
@@ -207,6 +231,7 @@ export async function startRun(stage, options) {
         const ownState = me.physics ? physicsState(me) : me.remoteState;
         for (const car of cars) {
             const s = car.physics ? physicsState(car) : car.remoteState;
+            stateByModel.set(car.vehicle.model, s);
             car.vehicle.update(dt, s, live ? { skids, smoke, smokeRate: quality === 'low' ? 0.5 : 1 } : null);
             car.voice?.update({
                 rpm: car.physics?.rpm ?? 900 + Math.abs(s.forward) * 160,
@@ -220,17 +245,26 @@ export async function startRun(stage, options) {
             rig.bump(me.physics.impact);
             me.voice?.impact(me.physics.impact);
         }
-        skids.update();
-        smoke.update(simDt);
+        if (racing) contactEffects(simDt);
+        carHits.length = 0;
         rig.update(dt, ownState);
-        // a car right at the camera (a bot tailgating) would fill the screen from inside: hide it while it is that close
-        const eye = rig.camera.position;
-        for (const car of cars) {
-            if (car === me) continue;
-            const m = car.vehicle.model.position;
-            car.vehicle.model.visible = rig.mode === 'hood' || (m.x - eye.x) ** 2 + (m.y - eye.y) ** 2 + (m.z - eye.z) ** 2 > 20;
+        rig.camera.updateMatrixWorld();
+        hideCarsAtCamera();
+        carLights.update(stateOf);
+        if (streaks) {
+            for (const car of cars) {
+                car.lamps ??= { model: car.vehicle.model, braking: false };
+                car.lamps.braking = !!stateByModel.get(car.vehicle.model)?.braking;
+            }
+            lampList.length = 0;
+            for (const car of cars) lampList.push(car.lamps);
+            streaks.update(rig.camera.position, lampList);
         }
-        world.update(dt, rig.camera.position);
+        skids.update();
+        smoke.update(simDt, rig.camera);
+        sparks.update(simDt);
+        backfires.update(simDt);
+        world.update(dt, rig.camera.position, rig.camera);
         emitStates(dt);
         hudTimer += dt;
         if (hudTimer >= 1 / 30) {
@@ -238,6 +272,88 @@ export async function startRun(stage, options) {
             updateHud(t, controls);
         }
         if (racing) checkEnd(t);
+    }
+
+    /** A car right at the camera (a bot tailgating, the close camera passing one) would fill the screen from inside: hidden while the eye is in it. */
+    function hideCarsAtCamera() {
+        const eye = rig.camera.position;
+        for (const car of cars) {
+            if (car === me) continue;
+            const model = car.vehicle.model;
+            const at = model.position;
+            const profile = model.userData.profile ?? {};
+            const dx = eye.x - at.x;
+            const dz = eye.z - at.z;
+            const sin = Math.sin(model.rotation.y);
+            const cos = Math.cos(model.rotation.y);
+            // within ~1 m of its body (the lens would be in or right at it): it would block the whole picture
+            const inside = Math.abs(dx * sin + dz * cos) < (profile.len ?? 2.3) + 1.2
+                && Math.abs(dx * cos - dz * sin) < (profile.width ?? 1.8) / 2 + 0.9
+                && eye.y < at.y + (profile.roof ?? 1.4) + 0.8;
+            model.visible = rig.mode === 'hood' || !inside;
+        }
+    }
+
+    // ---- effects of contact and of the throttle (visual only): sparks off walls and cars, exhaust pops
+    const contact = { nx: 0, nz: 0, depth: 0 };
+
+    function contactEffects(dt) {
+        for (const car of cars) {
+            const p = car.physics;
+            if (!p) continue;
+            if (p.impact > 0.4 && p.speed > 3) wallSparks(p, dt);
+            const pop = backfires.watch(car.vehicle.model, p, car.controls, dt, car === me ? 1 : 0.55);
+            if (pop > 0) car.voice?.backfire?.(pop);
+        }
+        for (const hit of carHits) carSparks(hit);
+    }
+
+    /** Sparks where the body touches a wall: a burst on a hit, a trickle while it scrapes along. */
+    function wallSparks(p, dt) {
+        const sin = Math.sin(p.yaw);
+        const cos = Math.cos(p.yaw);
+        const reach = BODY_RADIUS + 0.06;
+        for (const offset of BODY_CIRCLES) {
+            const cx = p.x + sin * offset;
+            const cz = p.z + cos * offset;
+            const c = world.colliders.contact(cx, cz, reach, contact);
+            if (!c) continue;
+            const inside = reach - c.depth;
+            const hard = p.impact > 3;
+            const n = hard ? Math.min(34, Math.round(6 + p.impact * 2.5)) : Math.random() < p.speed * dt * 2.4 ? 1 + Math.floor(Math.random() * 3) : 0;
+            if (n > 0) {
+                sparks.emit(n, cx - c.nx * inside, p.y + 0.26 + Math.random() * 0.22, cz - c.nz * inside, p.y, p.vx * 0.85, p.vz * 0.85, c.nx, c.nz,
+                    Math.min(1, p.impact / 8 + p.speed / 60));
+            }
+            return;
+        }
+    }
+
+    /** Sparks between two cars that hit each other hard (at their nearest body circles). */
+    function carSparks({ a, b, strength }) {
+        let best = Infinity;
+        let mx = 0;
+        let mz = 0;
+        let nx = 0;
+        let nz = 0;
+        for (const oa of BODY_CIRCLES) {
+            for (const ob of BODY_CIRCLES) {
+                const ax = a.x + Math.sin(a.yaw) * oa;
+                const az = a.z + Math.cos(a.yaw) * oa;
+                const bx = b.x + Math.sin(b.yaw) * ob;
+                const bz = b.z + Math.cos(b.yaw) * ob;
+                const d = Math.hypot(ax - bx, az - bz);
+                if (d >= best || d < 1e-6) continue;
+                best = d;
+                mx = (ax + bx) / 2;
+                mz = (az + bz) / 2;
+                nx = (ax - bx) / d;
+                nz = (az - bz) / d;
+            }
+        }
+        if (best === Infinity) return;
+        const n = Math.min(26, Math.round(strength * 2.6));
+        sparks.emit(n, mx, a.y + 0.3 + Math.random() * 0.2, mz, a.y, (a.vx + (b.vx ?? 0)) / 2, (a.vz + (b.vz ?? 0)) / 2, nx, nz, Math.min(1, strength / 10));
     }
 
     function cycleCamera() {
@@ -281,8 +397,10 @@ export async function startRun(stage, options) {
             for (let j = 0; j < cars.length; j++) {
                 const b = cars[j];
                 if (i === j || (b.physics && j < i)) continue;
-                if (b.physics) collideCars(a.physics, b.physics, false);
-                else collideCars(a.physics, b.kinematic, true);
+                const other = b.physics ?? b.kinematic;
+                const strength = b.physics ? collideCars(a.physics, b.physics, false) : collideCars(a.physics, b.kinematic, true);
+                // remembered for the sparks only
+                if (strength > 2.5) carHits.push({ a: a.physics, b: other, strength });
             }
         }
     }
@@ -533,6 +651,10 @@ export async function startRun(stage, options) {
             if (index < 0) return;
             const [car] = cars.splice(index, 1);
             car.voice?.dispose();
+            carLights.remove(car.vehicle.model);
+            backfires.forget(car.vehicle.model);
+            streaks?.forget(car.vehicle.model);
+            stateByModel.delete(car.vehicle.model);
             car.vehicle.dispose();
         },
 
@@ -563,12 +685,16 @@ export async function startRun(stage, options) {
             removeEventListener('keydown', unlock);
             removeEventListener('pointerdown', unlock);
             hud.dispose();
+            carLights.dispose();
             for (const car of cars) {
                 car.voice?.dispose();
                 car.vehicle.dispose();
             }
             skids.dispose();
             smoke.dispose();
+            sparks.dispose();
+            backfires.dispose();
+            streaks?.dispose();
             world.dispose();
         },
     };
