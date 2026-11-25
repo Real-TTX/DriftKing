@@ -1,7 +1,40 @@
-// DriftKing · render/kit.js – the small modelling kit of the low-poly look: merging geometries (one draw call per material), canvas textures,
+// DriftKing · render/kit.js – the small modelling kit: merging geometries (one draw call per material), canvas textures,
 // the additive glow points (lamps, neon, lights without real lights) and the light pools on the ground, seeded randomness, disposal.
+// Shared resources (userData.shared = true on a geometry, material or texture) survive disposeTree – see markShared.
 
 import * as THREE from 'three';
+
+/**
+ * Marks a geometry, material or texture (or a material together with its textures) as shared for the life of the page:
+ * disposeTree and disposeMaterial leave it alone. Returns the object.
+ */
+export function markShared(object) {
+    if (!object) return object;
+    object.userData.shared = true;
+    if (object.isMaterial) {
+        for (const value of Object.values(object)) if (value?.isTexture) value.userData.shared = true;
+    }
+    return object;
+}
+
+/** True when the object (geometry, material, texture) is shared and must not be disposed by its user. */
+export function isShared(object) {
+    return object?.userData?.shared === true;
+}
+
+/** Frees a material and its own textures; shared materials and shared textures stay. */
+export function disposeMaterial(material) {
+    if (!material || isShared(material)) return;
+    for (const value of Object.values(material)) {
+        if (value?.isTexture && !isShared(value)) value.dispose();
+    }
+    if (material.uniforms) {
+        for (const u of Object.values(material.uniforms)) {
+            if (u.value?.isTexture && !isShared(u.value)) u.value.dispose();
+        }
+    }
+    material.dispose();
+}
 
 /** A seeded random generator (mulberry32): the same map looks the same on every client. */
 export function rng(seed) {
@@ -71,6 +104,38 @@ export function tint(geometry, hex) {
         array[k * 3 + 2] = c.b;
     }
     geometry.setAttribute('color', new THREE.BufferAttribute(array, 3));
+    return geometry;
+}
+
+/**
+ * Box-projected UVs in metres (the convention of render/textures.js): every vertex takes the two coordinates across the main axis of its
+ * normal (x/z on floors, x/y or z/y on walls). Call it on the placed geometry (after translate/rotate); offset shifts the pattern.
+ */
+export function metricUVs(geometry, { scale = 1, offsetU = 0, offsetV = 0 } = {}) {
+    if (!geometry.attributes.normal) geometry.computeVertexNormals();
+    const p = geometry.attributes.position;
+    const n = geometry.attributes.normal;
+    const uv = new Float32Array(p.count * 2);
+    for (let i = 0; i < p.count; i++) {
+        const ax = Math.abs(n.getX(i));
+        const ay = Math.abs(n.getY(i));
+        const az = Math.abs(n.getZ(i));
+        let u;
+        let v;
+        if (ay >= ax && ay >= az) {
+            u = p.getX(i);
+            v = -p.getZ(i);
+        } else if (ax >= az) {
+            u = -p.getZ(i) * Math.sign(n.getX(i) || 1);
+            v = p.getY(i);
+        } else {
+            u = p.getX(i) * Math.sign(n.getZ(i) || 1);
+            v = p.getY(i);
+        }
+        uv[i * 2] = u * scale + offsetU;
+        uv[i * 2 + 1] = v * scale + offsetV;
+    }
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     return geometry;
 }
 
@@ -145,8 +210,25 @@ export function sharedTexture(name) {
     } else {
         throw new Error(`unknown shared texture ${name}`);
     }
+    texture.userData.shared = true;
     shared.set(name, texture);
     return texture;
+}
+
+/**
+ * The brightness of every glow point and light pool of the kit (one shared uniform: changes apply at once, cars included).
+ * The stage sets it per quality – 1 on low, where the glows are the bloom; about half on medium/high, where emissive surfaces and the real bloom carry the light.
+ */
+const glowGain = { value: 1 };
+
+/** Sets the gain of all glow points and light pools (the stage calls it on a quality change). */
+export function setGlowGain(gain) {
+    glowGain.value = gain;
+}
+
+/** The current glow gain (1 on low, ~0.5 with bloom). */
+export function getGlowGain() {
+    return glowGain.value;
 }
 
 const GLOW_VERTEX = /* glsl */ `
@@ -165,14 +247,23 @@ const GLOW_VERTEX = /* glsl */ `
         gl_Position = projectionMatrix * mv;
     }`;
 
+// the glow is display-referred (as it always was): straight to the canvas (low) it is written as it is – no per-fragment tone mapping or
+// encoding on the cheapest tier, the old look exactly; into the linear HDR target of the post chain it is decoded ((tint × a)^2.2), so it
+// reads the same after the finish pass and only the HDR bloom adds to it
 const GLOW_FRAGMENT = /* glsl */ `
     uniform sampler2D map;
     uniform float intensity;
+    uniform float gain;
     varying vec3 vTint;
     varying float vFade;
     void main() {
         vec4 t = texture2D(map, gl_PointCoord);
-        gl_FragColor = vec4(vTint * t.a * intensity * vFade, 1.0);
+        vec3 c = vTint * t.a * intensity * gain * vFade;
+        #ifdef TONE_MAPPING
+            gl_FragColor = vec4(c, 1.0);
+        #else
+            gl_FragColor = vec4(pow(c, vec3(2.2)), 1.0);
+        #endif
     }`;
 
 /**
@@ -216,6 +307,7 @@ export function glowMaterial({ fogFar = 900, intensity = 1 } = {}) {
             scale: { value: 600 },
             fogFar: { value: fogFar },
             intensity: { value: intensity },
+            gain: glowGain,
         },
         vertexShader: GLOW_VERTEX,
         fragmentShader: GLOW_FRAGMENT,
@@ -247,12 +339,14 @@ export class LightPools {
         this.items.push({ x, y, z, radius, color: new THREE.Color(hex).multiplyScalar(strength) });
     }
 
-    build() {
+    /** The InstancedMesh (null when empty). strength scales all pools (the glow gain of the stage applies on top). */
+    build({ strength = 1 } = {}) {
         if (this.items.length === 0) return null;
         const geometry = new THREE.PlaneGeometry(2, 2);
         geometry.rotateX(-Math.PI / 2);
         const material = new THREE.MeshBasicMaterial({
             map: sharedTexture('pool'),
+            color: new THREE.Color(strength, strength, strength),
             blending: THREE.AdditiveBlending,
             transparent: true,
             depthWrite: false,
@@ -261,6 +355,11 @@ export class LightPools {
             polygonOffsetUnits: -2,
             fog: true,
         });
+        // the shared glow gain (setGlowGain) dims the pools together with the glow points
+        material.onBeforeCompile = shader => {
+            shader.uniforms.glowGain = glowGain;
+            shader.fragmentShader = 'uniform float glowGain;\n' + shader.fragmentShader.replace('#include <opaque_fragment>', 'outgoingLight *= glowGain;\n#include <opaque_fragment>');
+        };
         const mesh = new THREE.InstancedMesh(geometry, material, this.items.length);
         const m = new THREE.Matrix4();
         this.items.forEach((p, k) => {
@@ -274,25 +373,25 @@ export class LightPools {
     }
 }
 
-/** Frees the geometries, materials and (not shared) textures of everything below root. */
+/**
+ * Frees the geometries, materials and textures of everything below root – except shared ones (userData.shared, see markShared:
+ * the cached materials and textures of render/materials.js and render/textures.js, the reflection maps, the kit's shared textures) –
+ * and the shadow maps of its lights (Light.dispose: the moon's 2048² map on high).
+ * A scene's own environment/background textures are left alone too unless they are not shared.
+ */
 export function disposeTree(root) {
-    const sharedTextures = new Set(shared.values());
     root.traverse(object => {
-        object.geometry?.dispose();
+        if (object.geometry && !isShared(object.geometry)) object.geometry.dispose();
         const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
-        for (const material of materials) {
-            for (const value of Object.values(material)) {
-                if (value?.isTexture && !sharedTextures.has(value)) value.dispose();
-            }
-            if (material.uniforms) {
-                for (const u of Object.values(material.uniforms)) {
-                    if (u.value?.isTexture && !sharedTextures.has(u.value)) u.value.dispose();
-                }
-            }
-            material.dispose();
-        }
+        for (const material of materials) disposeMaterial(material);
         if (object.isInstancedMesh) object.dispose();
+        if (object.isLight) object.dispose();
     });
+    if (root.isScene) {
+        for (const texture of [root.environment, root.background]) {
+            if (texture?.isTexture && !isShared(texture)) texture.dispose();
+        }
+    }
 }
 
 /** Smooth step 0..1 between edge0 and edge1. */

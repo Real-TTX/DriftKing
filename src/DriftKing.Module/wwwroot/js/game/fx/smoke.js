@@ -18,15 +18,23 @@ const VERTEX = /* glsl */ `
         gl_Position = projectionMatrix * mv;
     }`;
 
+// the colour is display-referred (as it always was): straight to the canvas (low, TONE_MAPPING) it is written as it is – no per-fragment
+// work on the cheapest tier; into the linear HDR target of the post chain (medium/high) it is the same colour decoded to linear light on
+// the CPU (linearColour), so it reads the same after the finish pass (render/post.js, the pattern of render/kit.js's glow)
 const FRAGMENT = /* glsl */ `
     uniform vec3 colour;
+    uniform vec3 linearColour;
     varying vec2 vUv;
     varying float vAlpha;
     void main() {
         float d = length(vUv);
         float a = smoothstep(1.0, 0.15, d) * vAlpha;
         if (a < 0.01) discard;
-        gl_FragColor = vec4(colour, a);
+        #ifdef TONE_MAPPING
+            gl_FragColor = vec4(colour, a);
+        #else
+            gl_FragColor = vec4(linearColour, a);
+        #endif
     }`;
 
 /** The smoke of a run. emit() puffs, update() moves them (once per frame). */
@@ -46,8 +54,9 @@ export class Smoke {
         geometry.setAttribute('size', this.sizes);
         geometry.setAttribute('alpha', this.alphas);
         geometry.instanceCount = capacity;
+        const display = new THREE.Color(colour);
         this.mesh = new THREE.Mesh(geometry, new THREE.ShaderMaterial({
-            uniforms: { colour: { value: new THREE.Color(colour) }, fogFar: { value: fogFar } },
+            uniforms: { colour: { value: display }, linearColour: { value: display.clone().convertSRGBToLinear() }, fogFar: { value: fogFar } },
             vertexShader: VERTEX,
             fragmentShader: FRAGMENT,
             transparent: true,

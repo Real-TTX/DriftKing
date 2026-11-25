@@ -62,13 +62,18 @@ src/DriftKing.Module/wwwroot
   data/maps.json        the four courses (control points, width, lengthM, defaultLaps) – shared with the server
   js/game               main (entry), api (SDK glue), net (a run ↔ the room), nav, menu (shell, home, sign-in, profile, settings, pause, results),
                         menu-play (solo, competitions, online rooms), menu-garage, ui, settings, catalog (fixed words + specOf mirror),
-                        render/ (stage), world/ (course, road, props, maps/*), car/ (models, physics, bot), run/ (run, drift scoring, camera), fx/, hud, input, audio,
-                        scenes/ (menu backdrop, garage turntable)
-  dev/                  previews (drive, garage, maps)
+                        render/ stage (renderer, frame loop, tone mapping per quality), post (HDR chain: MSAA, bloom, finish pass), device (the renderer
+                        for GPU work outside a frame), environment (PMREM reflection maps night/dusk/garage), textures (procedural PBR texture recipes),
+                        materials (the material factory per quality), lights (LightRig: fixed pool of real lights, presets), kit (merging, glows, pools,
+                        UVs in metres, shared/disposal), world/ (env: sky, fog, fill light; world: build + ctx; course, road, props, maps/*),
+                        car/ (models, physics, bot), run/ (run, drift scoring, camera), fx/, hud, input, audio, scenes/ (menu backdrop, garage turntable)
+  lib/three             three.js r187 (three.module.js + three.core.js) and addons/ (postprocessing, shaders, environments, utils, geometries, objects)
+  dev/                  previews (drive, garage, maps, materials: the look development board)
 src/DriftKing.Local     DriftKingLocal (ILocalGame: API + hub + clock), LocalProfile
 src/DriftKing.App       the Windows app (MatGame.Shell + wwwroot embedded + DriftKingLocal)
 tests/DriftKing.Tests   RulesTests, RoomTests, LocalGameTests
 docs/PROTOCOL.md        API, hub, who decides what, offline
+docs/RENDERING.md       the rendering contract: quality tiers, post, reflections, textures, materials, lights, sky, budgets, realism reference
 ```
 
 ## Game rules in code

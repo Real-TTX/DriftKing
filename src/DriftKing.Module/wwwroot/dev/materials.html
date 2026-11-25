@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <base href="/driftking/" />
+    <title>DriftKing · Material-Vorschau</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <style>
+        #info { position: fixed; left: 10px; top: 10px; z-index: 5; font: 12px/1.4 var(--dk-mono); color: #fff; background: rgba(0,0,0,.55); padding: 6px 10px; border-radius: 6px; white-space: pre; }
+    </style>
+    <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
+</head>
+<body>
+    <!-- materials.html?quality=low|medium|high&time=night|dusk&env=garage&view=road|row|close&orbit=1 – the look development board of render/:
+         every material of render/materials.js on a wet/dry street under the real sky, reflection map and light rig (lamps, neon, a headlight) -->
+    <div id="dk-stage" class="stage"></div>
+    <div id="info"></div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+        import { settings } from './js/game/settings.js';
+        import { createStage } from './js/game/render/stage.js';
+        import { materialsFor } from './js/game/render/materials.js';
+        import { stats as textureStats } from './js/game/render/textures.js';
+        import { environmentMap, lastBuildMs } from './js/game/render/environment.js';
+        import { LightRig, LIGHT_PRESETS } from './js/game/render/lights.js';
+        import { buildEnvironment } from './js/game/world/env.js';
+        import { metricUVs, GlowPoints } from './js/game/render/kit.js';
+
+        const q = new URLSearchParams(location.search);
+        if (q.get('quality')) settings.set({ quality: q.get('quality') });
+        const quality = settings.get().quality;
+        const time = q.get('time') ?? 'night';
+        const stage = createStage(document.getElementById('dk-stage'));
+        const started = performance.now();
+        const scene = new THREE.Scene();
+        const env = buildEnvironment(scene, { timeOfDay: time, quality });
+        const envStarted = performance.now();
+        scene.environment = quality === 'low' ? null : environmentMap(q.get('env') ?? time);
+        const envMs = performance.now() - envStarted;
+        scene.environmentIntensity = env.palette.envIntensity;
+        scene.userData.post = { ...env.palette.post };
+        // look development overrides: &hemi=0.3&envi=0.8&exposure=1.4&bloom=0.6
+        if (q.get('hemi')) env.hemi.intensity = Number(q.get('hemi'));
+        if (q.get('envi')) scene.environmentIntensity = Number(q.get('envi'));
+        if (q.get('exposure')) scene.userData.post.exposure = Number(q.get('exposure'));
+        if (q.get('bloom')) scene.userData.post.bloom = { ...scene.userData.post.bloom, strength: Number(q.get('bloom')) };
+        const rig = new LightRig(scene, quality);
+        const mat = materialsFor(quality);
+        const add = (geometry, material, x = 0, y = 0, z = 0) => {
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = mesh.receiveShadow = true;
+            scene.add(mesh);
+            return mesh;
+        };
+        const plane = (w, h) => metricUVs(new THREE.PlaneGeometry(w, h).rotateX(-Math.PI / 2));
+        const boxAt = (w, h, d, x, y, z) => metricUVs(new THREE.BoxGeometry(w, h, d).translate(x, y, z));
+
+        // the street: dry half, wet half with puddles, a kerb, a pavement, grass beyond
+        add(plane(30, 14).translate(-15, 0, 0), mat.asphalt());
+        add(plane(30, 14).translate(15, 0, 0), mat.asphalt({ wet: 0.8 }));
+        add(boxAt(60, 0.15, 0.3, 0, 0.075, -7.15), mat.concrete({ seams: false }));
+        add(plane(60, 4).translate(0, 0.15, -9.3), mat.tiles({ scale: 0.6 }));
+        add(plane(60, 30).translate(0, 0.01, 21), mat.ground({ kind: 'grass' }));
+        add(boxAt(60, 6, 0.4, 0, 3, -11.5), mat.concrete());
+
+        // a row of samples on the dry side (left) and the wet side (right)
+        const sphere = new THREE.SphereGeometry(0.6, 48, 24);
+        const paints = [[0xb0121b, { metallic: 0 }], [0x1d4fa8, { metallic: 0.8 }], [0xf2f2ee, { metallic: 0.2, pearl: 0.6 }], [0x0d0e10, { metallic: 0.7 }], [0xf2b705, { metallic: 0.3 }]];
+        paints.forEach(([c, o], k) => add(sphere, mat.carPaint(c, o), -12 + k * 1.6, 0.6, -3));
+        add(sphere, mat.chrome(), -3.5, 0.6, -3);
+        add(sphere, mat.metal({ brushed: true }), -2, 0.6, -3);
+        add(sphere, mat.plastic({ color: 0xff5a1f }), -0.5, 0.6, -3);
+        add(new THREE.TorusGeometry(0.33, 0.12, 24, 48).rotateY(Math.PI / 2), mat.rubber(), 1, 0.45, -3);
+        const tyre = new THREE.CylinderGeometry(0.33, 0.33, 0.22, 48, 1, true).rotateZ(Math.PI / 2);
+        add(tyre, mat.rubber({ tread: true }), 2.2, 0.33, -3);
+        add(new RoundedBoxGeometry(1.6, 0.9, 0.06, 3, 0.03), mat.glass(), 4, 0.9, -3);
+        paints.forEach(([c, o], k) => add(sphere, mat.carPaint(c, o), 6 + k * 1.6, 0.6, -3));
+
+        // the back wall: container side, brick, facade, rock; a pole, a guardrail, bark and a foliage card
+        add(boxAt(6.06, 2.59, 0.3, -18, 1.3, -10.6), mat.corrugated({ color: 0x2f6fa8 }));
+        add(boxAt(6.06, 2.59, 0.3, -11.8, 1.3, -10.6), mat.corrugated({ color: 0xb8452a, rust: 0.8 }));
+        add(boxAt(5, 5, 0.3, -5.5, 2.5, -10.9), mat.brick());
+        add(boxAt(12, 6, 0.3, 3.5, 3, -11.0), mat.facade({ lit: 0.5 }));
+        add(boxAt(6, 5, 0.6, 13, 2.5, -10.8), mat.rock());
+        add(new THREE.CylinderGeometry(0.25, 0.3, 4, 24).translate(19, 2, -9), mat.bark());
+        const card = new THREE.PlaneGeometry(2, 2);
+        for (const a of [0, Math.PI / 2]) add(card.clone().rotateY(a), mat.foliage(), 19, 2.6, -9);
+        add(boxAt(30, 0.32, 0.08, 0, 0.6, 6.9), mat.metal({ color: 0xb4b8bd, roughness: 0.45 }));
+
+        // street lamps (poles painted, heads emissive) with real lights, neon signs with a coloured spill, a headlight
+        const glows = new GlowPoints();
+        for (const [x, preset] of [[-16, 'sodium'], [-2, 'led'], [12, 'sodium']]) {
+            add(new THREE.CylinderGeometry(0.09, 0.12, 8.5, 12).translate(x, 4.25, -7.6), mat.painted({ color: 0x3a3f46 }));
+            add(new THREE.BoxGeometry(0.5, 0.12, 1.2).translate(x, 8.5, -6.8), mat.painted({ color: 0x2a2e33 }));
+            const lens = LIGHT_PRESETS[preset].color;
+            add(new THREE.BoxGeometry(0.4, 0.03, 0.9).translate(x, 8.43, -6.8), mat.emissive(lens, 12));
+            glows.add(x, 8.3, -6.8, 3.2, lens);
+            rig.add({ x, y: 8.3, z: -6.8, ...LIGHT_PRESETS[preset] });
+        }
+        for (const [x, c] of [[-8, 0xff2e88], [7, 0x29e7ff]]) {
+            add(new THREE.BoxGeometry(3, 0.12, 0.12).translate(x, 4.2, -10.4), mat.emissive(c, 6));
+            add(new THREE.BoxGeometry(3, 0.12, 0.12).translate(x, 3.6, -10.4), mat.emissive(c, 6));
+            rig.add({ x, y: 3.9, z: -9.8, ...LIGHT_PRESETS.neon, color: c, dir: { x: 0, y: -0.5, z: 1 } });
+        }
+        rig.add({ x: 18, y: 0.8, z: 2, ...LIGHT_PRESETS.headlight, target: { x: 0, y: 0, z: 0 } });
+        const points = glows.build({ fogFar: 900 });
+        if (points) scene.add(points);
+        const built = performance.now() - started;
+
+        const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
+        const view = q.get('view') ?? 'road';
+        const target = new THREE.Vector3();
+        stage.show({
+            scene,
+            camera,
+            update(dt, t) {
+                if (q.get('orbit')) {
+                    const a = t * 0.12;
+                    camera.position.set(Math.sin(a) * 16, 4.5, Math.cos(a) * 16);
+                    camera.lookAt(0, 1, -3);
+                } else if (view === 'row') {
+                    camera.position.set(0, 1.6, 4.5);
+                    camera.lookAt(0, 0.8, -4);
+                } else if (view === 'close') {
+                    camera.position.set(-6, 1.2, 0.5);
+                    camera.lookAt(-9, 0.6, -3);
+                } else {
+                    camera.position.set(-1, 2.4, 11);
+                    camera.lookAt(1, 1.2, -6);
+                }
+                target.copy(camera.position);
+                env.update(dt, target);
+                rig.update(target, dt, camera.getWorldDirection(forward));
+            },
+        });
+        const forward = new THREE.Vector3();
+        // read between frames: the renderer counts a whole frame (post passes included)
+        setInterval(() => (document.getElementById('info').textContent =
+            `${quality} · built ${Math.round(built)} ms (textures ${Math.round(textureStats.ms)} ms, ${(textureStats.bytes / 1e6).toFixed(1)} MB · env ${Math.round(envMs)} ms) · ` +
+            `${stage.fps.toFixed(0)} fps · calls ${stage.renderer.info.render.calls} · tris ${stage.renderer.info.render.triangles} · lights ${rig.active().length}/${rig.size}`), 250);
+        window.__ready = true;
+    </script>
+</body>
+</html>

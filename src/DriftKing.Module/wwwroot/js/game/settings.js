@@ -8,7 +8,10 @@ const DEFAULTS = Object.freeze({
     volume: 0.8,
     /** Music volume 0..1 (the synthesized beat in the menus and runs). */
     music: 0.5,
-    /** Picture quality: 'low' | 'medium' | 'high' (pixel ratio, shadows, smoke particles, draw distance). */
+    /**
+     * Picture quality: 'low' | 'medium' | 'high' – pixel ratio, post-processing (HDR, MSAA, bloom), reflections, PBR materials and texture size,
+     * real lights, shadows, smoke particles, detail (docs/RENDERING.md, "Pipeline and quality tiers").
+     */
     quality: 'medium',
     /** The camera of a run: 'chase' (behind the car) | 'near' (close chase) | 'hood' (bonnet). */
     camera: 'chase',
