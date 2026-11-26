@@ -4,7 +4,7 @@
 // The palette also carries the reflection map kind, its intensity and the post settings of the time of day (exposure, bloom).
 
 import * as THREE from 'three';
-import { rng } from '../render/kit.js';
+import { rng, SHADOW_ONLY_LAYER } from '../render/kit.js';
 import { texturesFor } from '../render/textures.js';
 
 /** The direction of the moon (from the viewer): the sky draws it there, the moon light comes from there. */
@@ -333,6 +333,8 @@ export function buildEnvironment(scene, { timeOfDay = 'night', quality = 'medium
         moon.shadow.bias = -0.0008;
         moon.shadow.normalBias = 0.02;
         moon.shadow.radius = 3;
+        // shadow proxies (kit.js shadowOnly: the forest's crowns) cast as well; the view cameras never see them
+        cam.layers.enable(SHADOW_ONLY_LAYER);
     }
     if (quality !== 'low') scene.add(moon);
     scene.add(moon.target);

@@ -5,7 +5,7 @@
 // blinking red lights, lit crowns, and the big neon billboard on the roof across the north street. All seeded (rng), all batched per material.
 
 import * as THREE from 'three';
-import { canvasTexture, GlowPoints, getGlowGain, mergeGeometries, metricUVs, rng, sharedTexture } from '../../render/kit.js';
+import { canvasTexture, drawLast, GlowPoints, getGlowGain, mergeGeometries, metricUVs, rng, sharedTexture } from '../../render/kit.js';
 import { Batch, LIT } from './deck-atlas.js';
 import { rod } from './deck-structures.js';
 
@@ -111,7 +111,8 @@ export function buildCity(ctx, { halfX, halfZ, drop, lit }) {
 function buildStreets(ctx, ground, detail, random) {
     const { root, materials, glows, pools } = ctx;
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(1500, 1500).rotateX(-Math.PI / 2).translate(0, ground, 0), materials.painted({ color: 0x34333a, roughness: 0.92 }));
-    root.add(plane);
+    // under everything of the town: drawn last, so only its visible pixels are shaded
+    root.add(drawLast(plane));
     const roads = [];
     const extent = 640;
     for (const x of STREETS_X) roads.push(new THREE.PlaneGeometry(ROAD_HALF * 2, extent * 2).rotateX(-Math.PI / 2).translate(x, ground + 0.03, 0));

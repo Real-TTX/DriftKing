@@ -22,6 +22,36 @@ export function isShared(object) {
     return object?.userData?.shared === true;
 }
 
+/**
+ * The render order of a large ground under everything (a plane of 1.5 km under the streets, the land around a port): opaque objects are
+ * drawn front to back by the centre of their bounds, which puts a huge plane anywhere in that order – drawn early, it is shaded wherever
+ * the road, the kerbs and the buildings cover it afterwards (the city: ≈ 4 ms per frame on the 610M). Drawn after the other opaque
+ * objects (and before the sky, 1000), the depth test leaves only its visible pixels. Only for surfaces nothing else lies under.
+ */
+export const GROUND_LAST = 2;
+
+/** Draws the meshes after the other opaque objects (see GROUND_LAST); returns the first. */
+export function drawLast(...meshes) {
+    for (const mesh of meshes) if (mesh) mesh.renderOrder = GROUND_LAST;
+    return meshes[0];
+}
+
+/**
+ * The layer of shadow proxies: meshes only the moon's shadow camera sees (env.js enables it there; the view cameras keep layer 0 only).
+ * A cheap opaque stand-in casts the shadow of something expensive to render into the shadow map – the needle cards of a forest
+ * (alpha-tested, double sided, layered: ≈ 21 ms per frame on the 610M on high) cast through their crown's silhouette instead.
+ */
+export const SHADOW_ONLY_LAYER = 5;
+
+/** Makes a mesh a shadow proxy (casts on high, never drawn in a view); returns it. */
+export function shadowOnly(mesh) {
+    if (!mesh) return mesh;
+    mesh.layers.set(SHADOW_ONLY_LAYER);
+    mesh.castShadow = true;
+    mesh.receiveShadow = false;
+    return mesh;
+}
+
 /** Frees a material and its own textures; shared materials and shared textures stay. */
 export function disposeMaterial(material) {
     if (!material || isShared(material)) return;

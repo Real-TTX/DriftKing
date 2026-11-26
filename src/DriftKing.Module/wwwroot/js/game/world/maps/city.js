@@ -7,6 +7,7 @@
 // shared road/kerb/lamp/start-line builders and the two trains.
 
 import * as THREE from 'three';
+import { drawLast } from '../../render/kit.js';
 import { buildKerbs, buildRoadStrip, buildStartLine, courseEdges, ribbonGeometry } from '../road.js';
 import { Batch, emissiveMaterial, pick, planarUVs, propsMaterial } from './city-kit.js';
 import { Facades } from './city-facade.js';
@@ -106,7 +107,8 @@ function buildGround(ctx) {
     ground.position.y = -0.05;
     ground.receiveShadow = true;
     ground.name = 'ground';
-    root.add(ground);
+    // under the street, the kerbs and the blocks: drawn last, so only its visible pixels are shaded
+    root.add(drawLast(ground));
     root.add(buildRoadStrip(course, m.asphalt({ wet: 0.8, puddles: 0.4 }), {
         lift: 0.02,
         materials: m,

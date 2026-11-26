@@ -78,6 +78,7 @@ export function compileRule(rule) {
     if (rule.material) tests.push([new RegExp(rule.material, 'i'), 'material']);
     if (rule.node) tests.push([new RegExp(rule.node, 'i'), 'path']);
     if (rule.mesh) tests.push([new RegExp(rule.mesh, 'i'), 'mesh']);
+    if (rule.end) tests.push([new RegExp(`^(${rule.end})$`, 'i'), 'end']);
     if (!tests.length) return () => false;
     return info => tests.every(([re, field]) => re.test(info[field] ?? ''));
 }

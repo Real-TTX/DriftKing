@@ -1,3 +1,158 @@
 {
-  "models": []
+  "models": [
+    {
+      "key": "e46",
+      "car": "BMW M3 E46",
+      "title": "BMW M3 E46",
+      "author": "MMC Works",
+      "authorUrl": "https://sketchfab.com/mmcworks",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/bmw-m3-e46-f1b00ff37d504629b10031da32bc7497",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "f21",
+      "car": "BMW M140i F21",
+      "title": "2018 BMW M140i",
+      "author": "Ddiaz Design",
+      "authorUrl": "https://sketchfab.com/ddiaz-design",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/2018-bmw-m140i-24f09cc46773424fb2a3922427f1c37d",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "g81",
+      "car": "BMW M3 Competition Touring G81",
+      "title": "bmw-m3-competition-touring-2022",
+      "author": "MattDoesBlender",
+      "authorUrl": "https://sketchfab.com/MattDoesBlender",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/bmw-m3-competition-touring-2022-f9b0bb6cd6bc4195ac0872c9f3bdc138",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "gr86",
+      "car": "Toyota GR86",
+      "title": "GR86",
+      "author": "Whill",
+      "authorUrl": "https://sketchfab.com/sr._suave_edits",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/gr86-94a109d02d014f93873a812213ef5b51",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "hotaru",
+      "car": "Toyota Sprinter Trueno AE86",
+      "title": "Toyota AE86 Sprinter Trueno Zenki",
+      "author": "Martin Trafas",
+      "authorUrl": "https://sketchfab.com/TinoD2",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/toyota-ae86-sprinter-trueno-zenki-a5737bf3cc9b4179a6e5ebe173ff70d9",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "kaze",
+      "car": "Nissan Silvia S13",
+      "title": "1992 Nissan Silvia S13",
+      "author": "bagged_ls",
+      "authorUrl": "https://sketchfab.com/lstance",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/1992-nissan-silvia-s13-6fa8f1948f954e3b980b5e96f203815a",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "kitsune",
+      "car": "Mazda RX-7 FD3S",
+      "title": "Mazda RX-7 FD",
+      "author": "Lexyc16",
+      "authorUrl": "https://sketchfab.com/Lexyc16",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/mazda-rx-7-fd-d35ff630df614771b82e7b2f59035b1e",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "oni",
+      "car": "Ford Mustang GT",
+      "title": "Mustang_GT 2018",
+      "author": "Demonic Arts",
+      "authorUrl": "https://sketchfab.com/Jesterz86",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/mustang-gt-2018-dd4365565b6b4e0ea6c06a1ca4113e3e",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "raijin",
+      "car": "Nissan Skyline GT-R R34",
+      "title": "Nissan GTR R34 Skyline | GT-R Skyline",
+      "author": "Pooya_dh",
+      "authorUrl": "https://sketchfab.com/Pooya_dh",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/nissan-gtr-r34-skyline-gt-r-skyline-5eed440cfd094c5a8fdc9929eb43ab02",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "ronin",
+      "car": "Toyota Chaser JZX100",
+      "title": "Toyota Chaser",
+      "author": "Blue3D",
+      "authorUrl": "https://sketchfab.com/Blueberry12",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/toyota-chaser-7e856b85c32a40bea7a88b5852ded4a9",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "s14a",
+      "car": "Nissan 200SX S14a",
+      "title": "Nissan 200SX Silvia S14",
+      "author": "Lexyc16",
+      "authorUrl": "https://sketchfab.com/Lexyc16",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/nissan-200sx-silvia-s14-f2a917a924734a89a020e7f970e55e7c",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "tora",
+      "car": "Toyota Supra A80",
+      "title": "Toyota Supra",
+      "author": "AdamRichard",
+      "authorUrl": "https://sketchfab.com/AdamRichard",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/toyota-supra-a0a1c592c6914020a9d1f7679346e703",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "yurei",
+      "car": "Nissan Silvia S15 Spec-R",
+      "title": "Nissan Silvia",
+      "author": "zhe_kan",
+      "authorUrl": "https://sketchfab.com/zhe_kan",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/nissan-silvia-30e45aa381ca4fac8dc91f52e781124d",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    },
+    {
+      "key": "z33",
+      "car": "Nissan 350Z",
+      "title": "Nissan 350Z",
+      "author": "barking_dogo",
+      "authorUrl": "https://sketchfab.com/barking_dogo",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+      "source": "https://sketchfab.com/3d-models/nissan-350z-17ca0ac209fd4823878a013c0dff82bf",
+      "changes": "Reduced, re-textured and re-materialised for the game (DriftKing)."
+    }
+  ]
 }

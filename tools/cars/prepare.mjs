@@ -81,6 +81,7 @@ doc.setLogger({ debug() {}, info() {}, warn: m => console.warn('  gltf-transform
 const used = root.listExtensionsUsed().map(e => e.extensionName);
 if (used.includes('KHR_materials_pbrSpecularGlossiness')) await doc.transform(metalRough());
 await doc.transform(dequantize(), uninstance(), normals({ overwrite: false }));
+if (config.pose != null) applyPose(Number(config.pose));
 for (const a of root.listAnimations()) a.dispose();
 for (const node of root.listNodes()) {
     if (node.getSkin()) {
@@ -89,6 +90,11 @@ for (const node of root.listNodes()) {
     }
 }
 const scene = root.getDefaultScene() ?? root.listScenes()[0];
+// "straighten": node path regex – those nodes lose their own rotation (a model shown with its front wheels steered)
+if (config.straighten) {
+    const re = new RegExp(config.straighten, 'i');
+    for (const { node, path } of listNodes(scene)) if (re.test(path)) node.setRotation([0, 0, 0, 1]);
+}
 
 // ---------------------------------------------------------------- collect the primitives in the car's frame
 
@@ -99,6 +105,10 @@ for (const role of Object.keys(config.roles ?? {})) {
 }
 const wheelRule = compileRule(normaliseRule(config.wheels.match, 'node'));
 const brakeRule = compileRule(normaliseRule(config.wheels.brakes, 'node'));
+const splitEndsRule = compileRule(config.splitEnds ?? null);
+// "singleSided": a material rule – those lamp/kept materials lose double-siding (lamp lenses glowing through an open boot into the cabin)
+const singleSidedRule = compileRule(config.singleSided ?? null);
+const farExclude = compileRule(normaliseRule(config.farExclude ?? null, 'node'));
 const orient = orientation(config);
 
 /** { prim, info, source (material), role, wheel, brake, corner } */
@@ -119,11 +129,22 @@ for (const { node, path } of listNodes(scene)) {
         sourceTriangles += triangles(copy);
         const brake = brakeRule(info);
         const wheel = brake || wheelRule(info);
-        const role = roleRules.find(([, test]) => test(info))?.[0] ?? null;
-        records.push({ prim: copy, info, source: material, role, wheel, brake, corner: null });
+        records.push({ prim: copy, info, source: material, role: null, wheel, brake, corner: null });
     }
 }
 if (!records.length) throw new Error('nothing left to prepare (all excluded?)');
+// "end" (front | rear) of every part by its centre; "splitEnds" cuts the matching parts in two first (a lamp material that is
+// both the head lamps and the reversing lamps) – role rules can then ask for { "material": …, "end": "rear" }
+{
+    const all = records.reduce((acc, r) => growBounds(acc, primitiveBounds(r.prim)), emptyBounds());
+    const midZ = (all.min[2] + all.max[2]) / 2;
+    records = records.flatMap(r => (!r.wheel && splitEndsRule(r.info) ? splitByEnd(r, midZ) : [r]));
+    for (const r of records) {
+        const b = primitiveBounds(r.prim);
+        r.info = { ...r.info, end: (b.min[2] + b.max[2]) / 2 >= midZ ? 'front' : 'rear' };
+        r.role = roleRules.find(([, test]) => test(r.info))?.[0] ?? null;
+    }
+}
 log(`${records.length} primitives, ${sourceTriangles} triangles`);
 
 // ---------------------------------------------------------------- scale, ground, centre
@@ -149,6 +170,16 @@ for (const r of records) {
     r.bounds = primitiveBounds(r.prim);
 }
 log(`scale ${fmt(scale, 4)} (model length ${fmt(size[2], 3)} → ${config.length} m)`);
+// "width": the real body width in metres (without mirrors) – narrows/widens a model built too fat or too thin (x only, wheels included)
+if (config.width) {
+    const measured = bodyWidth(records.filter(r => !r.wheel));
+    const squeeze = [config.width / measured, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    for (const r of records) {
+        transformPrimitive(r.prim, squeeze);
+        r.bounds = primitiveBounds(r.prim);
+    }
+    log(`width ×${fmt(config.width / measured, 3)} (body ${fmt(measured, 3)} → ${config.width} m)`);
+}
 
 // ---------------------------------------------------------------- the four wheels
 
@@ -218,6 +249,7 @@ for (const r of records) {
         outputs.set(id, m);
     }
     if (merged && r.source.getDoubleSided()) m.setDoubleSided(true);
+    if (!merged && singleSidedRule(r.info)) m.setDoubleSided(false);
     r.material = m;
 }
 
@@ -236,6 +268,7 @@ const farMaterial = doc.createMaterial('far').setRoughnessFactor(0.45).setMetall
 const farGroups = new Map();
 for (const r of records) {
     if (r.bounds && Math.max(...sizeOf(r.bounds)) < 0.04) continue; // bolts, badges, wiper nozzles
+    if (farExclude(r.info)) continue; // "farExclude": detail the far model can do without (grille meshes that do not simplify)
     const kind = farKind(r);
     const copy = deepCopy(r.prim);
     // position and normal only (lamps keep their UVs: a lamp texture stays on the lens)
@@ -339,7 +372,12 @@ for (const c of CORNERS) {
 addPart('far', farPrims);
 for (const node of root.listNodes()) if (!isUnder(node, car)) node.dispose();
 for (const mesh of root.listMeshes()) if (!mesh.listParents().some(p => p.propertyType === 'Node')) mesh.dispose();
-await doc.transform(prune({ keepAttributes: false, keepLeaves: false }), dedup());
+// materials keep their names: two role materials cloned from one source (light_head / light_reverse) are identical but must stay two
+await doc.transform(
+    prune({ keepAttributes: false, keepLeaves: false }),
+    dedup({ propertyTypes: ['Accessor', 'Mesh', 'Texture'] }),
+    dedup({ propertyTypes: ['Material'], keepUniqueNames: true }),
+);
 
 // ---------------------------------------------------------------- textures and compression
 
@@ -369,6 +407,39 @@ log(`registered "${key}" in data/car-models.json and data/car-credits.json`);
 console.log(`\ncheck it: node scripts/serve.mjs → /driftking/dev/cars.html?view=close&car=${key}&quality=high`);
 
 // ================================================================ helpers
+
+/** "pose": puts every animated node in its pose at `time` seconds (linear between keyframes; the model's static pose otherwise). */
+function applyPose(time) {
+    for (const animation of root.listAnimations()) {
+        for (const channel of animation.listChannels()) {
+            const node = channel.getTargetNode();
+            const path = channel.getTargetPath();
+            const sampler = channel.getSampler();
+            if (!node || !sampler || !['translation', 'rotation', 'scale'].includes(path)) continue;
+            const times = sampler.getInput().getArray();
+            const values = sampler.getOutput().getArray();
+            const size = path === 'rotation' ? 4 : 3;
+            const cubic = sampler.getInterpolation() === 'CUBICSPLINE';
+            const value = k => Array.from(values.slice((cubic ? 3 * k + 1 : k) * size, (cubic ? 3 * k + 1 : k) * size + size));
+            let k = 0;
+            while (k < times.length - 1 && times[k + 1] <= time) k++;
+            let v = value(k);
+            if (k < times.length - 1 && time > times[k] && sampler.getInterpolation() !== 'STEP') {
+                const f = (time - times[k]) / (times[k + 1] - times[k]);
+                const w = value(k + 1);
+                const sign = path === 'rotation' && v.reduce((s, x, i) => s + x * w[i], 0) < 0 ? -1 : 1;
+                v = v.map((x, i) => x + (sign * w[i] - x) * f);
+                if (path === 'rotation') {
+                    const n = Math.hypot(...v);
+                    v = v.map(x => x / n);
+                }
+            }
+            if (path === 'translation') node.setTranslation(v);
+            else if (path === 'rotation') node.setRotation(v);
+            else node.setScale(v);
+        }
+    }
+}
 
 /** A rule of cars.json where a plain string means `field` (node path for wheels/exclude, material for roles). */
 function normaliseRule(rule, field) {
@@ -479,6 +550,32 @@ function splitByQuadrant(record) {
         part.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(lists[c])));
         compactPrimitive(part);
         out.push({ ...record, prim: part, corner: c, bounds: primitiveBounds(part) });
+    }
+    return out;
+}
+
+/** Cuts a primitive in two by the end (front: centre z ≥ midZ) of each triangle's centre. */
+function splitByEnd(record, midZ) {
+    const prim = record.prim;
+    const pos = prim.getAttribute('POSITION');
+    const index = prim.getIndices().getArray();
+    const lists = { front: [], rear: [] };
+    const a = [0, 0, 0];
+    for (let i = 0; i < index.length; i += 3) {
+        let z = 0;
+        for (let k = 0; k < 3; k++) {
+            pos.getElement(index[i + k], a);
+            z += a[2];
+        }
+        lists[z / 3 >= midZ ? 'front' : 'rear'].push(index[i], index[i + 1], index[i + 2]);
+    }
+    const out = [];
+    for (const end of ['front', 'rear']) {
+        if (!lists[end].length) continue;
+        const part = prim.clone();
+        part.setIndices(doc.createAccessor().setType('SCALAR').setArray(new Uint32Array(lists[end])));
+        compactPrimitive(part);
+        out.push({ ...record, prim: part });
     }
     return out;
 }

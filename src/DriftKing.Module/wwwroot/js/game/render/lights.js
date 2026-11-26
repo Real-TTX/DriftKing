@@ -12,6 +12,23 @@
 import * as THREE from 'three';
 
 /**
+ * Every lit material pays for every pool light on every pixel – three evaluates the whole BRDF of a spot light even where the pixel is
+ * outside its cone or beyond its distance (the colour is 0 there). One branch per light skips that: on most pixels no pool light reaches,
+ * and those pixels come in large coherent areas, so whole GPU wavefronts skip the BRDF. The picture stays exactly the same (a light that
+ * is skipped added 0). Measured on the 610M: the pass on medium 19 → ~12 ms per frame. Patched once, before any program is compiled.
+ */
+function skipUnlitSpotLights() {
+    const chunk = THREE.ShaderChunk.lights_fragment_begin;
+    if (chunk.includes('/* dk-skip-unlit */')) return;
+    const start = chunk.indexOf('NUM_SPOT_LIGHTS > 0 ) && defined( RE_Direct )');
+    const call = 'RE_Direct( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );';
+    const at = chunk.indexOf(call, start);
+    if (start < 0 || at < 0) return;   // another three.js: leave its chunk alone
+    THREE.ShaderChunk.lights_fragment_begin = `${chunk.slice(0, at)}/* dk-skip-unlit */ if ( directLight.visible ) { ${call} }${chunk.slice(at + call.length)}`;
+}
+skipUnlitSpotLights();
+
+/**
  * The pool per quality: real lights that exist all the time (unused ones have intensity 0). Every lit material pays for every pool light on
  * every pixel – measured on an AMD Radeon 610M (city, 1366×768): 0 lights ≈ 5.4 ms, 6 ≈ 7.1 ms, 12 ≈ 9.9 ms per frame (docs/RENDERING.md).
  */

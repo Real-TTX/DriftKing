@@ -4,311 +4,768 @@
     "note": "coupe, RWD – the owner's favourite: take the best model there is",
     "length": 4.52,
     "wheelbase": 2.525,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Nissan 200SX Silvia S14",
+    "author": "Lexyc16",
+    "authorUrl": "https://sketchfab.com/Lexyc16",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "f2a917a924734a89a020e7f970e55e7c",
+      "url": "https://sketchfab.com/3d-models/nissan-200sx-silvia-s14-f2a917a924734a89a020e7f970e55e7c"
     },
-    "input": "",
+    "input": "tmp/cars/f2a917a924734a89a020e7f970e55e7c",
     "forward": "+z",
-    "exclude": null,
+    "exclude": {
+      "node": "italian-anpr"
+    },
     "wheels": {
-      "match": "",
+      "match": "/Circle(\\.00[123])?_\\d+/",
       "brakes": null,
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "paint": "^Material\\.003$",
+      "glass": "^Material\\.006$",
+      "lens": "^Material\\.007$",
+      "light_reverse": {
+        "material": "^Material\\.009$",
+        "end": "rear"
+      },
+      "light_head": "^Material\\.009$",
+      "light_tail": [
+        "^Material\\.010$",
+        {
+          "material": "^Material\\.008$",
+          "end": "rear"
+        }
+      ],
+      "light_indicator": "^Material\\.011$",
+      "chrome": "^Material\\.0(08|17|26)$",
+      "rubber": "^Material\\.021$",
+      "rim": "^Material\\.022$",
+      "trim": "^Material\\.004$",
+      "plastic": "^Material\\.0(02|05|15)$"
+    },
+    "splitEnds": "^Material\\.00[89]$",
+    "width": 1.73,
+    "singleSided": "^Material\\.0(08|10)$"
   },
   "kaze": {
     "car": "Nissan Silvia S13",
     "note": "coupe, RWD, the starter car",
     "length": 4.47,
     "wheelbase": 2.475,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "1992 Nissan Silvia S13",
+    "author": "bagged_ls",
+    "authorUrl": "https://sketchfab.com/lstance",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "6fa8f1948f954e3b980b5e96f203815a",
+      "url": "https://sketchfab.com/3d-models/1992-nissan-silvia-s13-6fa8f1948f954e3b980b5e96f203815a"
     },
-    "input": "",
+    "input": "tmp/cars/6fa8f1948f954e3b980b5e96f203815a",
     "forward": "+z",
-    "exclude": null,
+    "exclude": {
+      "node": "/Plate_\\d+/"
+    },
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "/(FL|FR|RL|RR)_\\d+/",
+      "brakes": "/(Cal|Disc)\\.\\d+_\\d+/",
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "paint": "^CarPaint2?$",
+      "glass": "^Windows$",
+      "lens": "^HeadAlpha1$",
+      "light_head": "^HeadIns2$",
+      "light_tail": "^(TailAlpha|Taillight)$",
+      "light_indicator": "^FrontIndi2$",
+      "chrome": "^(Chrome|ChromeRough|ChromeRough2|Mirror|HeadInsi|material)$",
+      "rubber": "^Tyre$",
+      "rim": "^(Rims|Rims\\.001|RimsDark\\.001|Lugs\\.001)$",
+      "metal": "^(DOut|Dblack|DBlackIn)$",
+      "caliper": "^Caliper$",
+      "trim": "^PlasticShiny$",
+      "plastic": "^(Plastic|Plastic\\.002|DarkPlastic|PlasticRough|UnderBody|HeadlightInside)$",
+      "exhaust": "^ExhD$"
+    },
+    "straighten": "/(FL|FR|RL|RR)_\\d+$",
+    "keepTextures": [
+      "caliper"
+    ],
+    "singleSided": "^(TailAlpha|Taillight|HeadIns2|FrontIndi2)$",
+    "mounts": {
+      "head": [
+        [0.466, 0.573, 2.1],
+        [-0.466, 0.573, 2.1]
+      ]
+    }
   },
   "hotaru": {
     "car": "Toyota Sprinter Trueno AE86",
     "note": "hatch, RWD (no film or anime livery)",
     "length": 4.205,
     "wheelbase": 2.4,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Toyota AE86 Sprinter Trueno Zenki",
+    "author": "Martin Trafas",
+    "authorUrl": "https://sketchfab.com/TinoD2",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "a5737bf3cc9b4179a6e5ebe173ff70d9",
+      "url": "https://sketchfab.com/3d-models/toyota-ae86-sprinter-trueno-zenki-a5737bf3cc9b4179a6e5ebe173ff70d9"
     },
-    "input": "",
+    "input": "tmp/cars/a5737bf3cc9b4179a6e5ebe173ff70d9",
     "forward": "+z",
-    "exclude": null,
+    "exclude": {
+      "material": "^LicensePlate$"
+    },
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "/[FR][LR]_(Wheel|Caliper)/",
+      "brakes": "/[FR][LR]_Caliper/",
       "split": false
     },
-    "roles": {}
+    "splitEnds": "^LampCovers$",
+    "roles": {
+      "light_head": {
+        "material": "^LampCovers$",
+        "node": "/Headlights/"
+      },
+      "light_tail": {
+        "material": "^LampCovers$",
+        "end": "rear"
+      },
+      "light_indicator": {
+        "material": "^LampCovers$",
+        "end": "front"
+      },
+      "paint": "^(Primary|Secondary)$",
+      "glass": "^Windows$",
+      "chrome": "^(Reflector|Mirror|Trueno)$",
+      "rim": "^RimMaterial$",
+      "rubber": "^TireMaterial$",
+      "metal": "^Brake_Disc$",
+      "caliper": "^BrakeCaliper$",
+      "trim": "^TailightFrame$",
+      "plastic": "^(Trim1|Shadow|Interior|InteriorPlastic2?|Seatbelt|SteeringWheel)$"
+    },
+    "keepTextures": [
+      "caliper"
+    ]
   },
   "ronin": {
     "car": "Toyota Chaser JZX100",
     "note": "sedan, RWD",
     "length": 4.715,
     "wheelbase": 2.73,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Toyota Chaser",
+    "author": "Blue3D",
+    "authorUrl": "https://sketchfab.com/Blueberry12",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "7e856b85c32a40bea7a88b5852ded4a9",
+      "url": "https://sketchfab.com/3d-models/toyota-chaser-7e856b85c32a40bea7a88b5852ded4a9"
     },
-    "input": "",
+    "input": "tmp/cars/7e856b85c32a40bea7a88b5852ded4a9",
     "forward": "+z",
     "exclude": null,
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "/Circle\\.(014|001|002|003)_\\d+/",
+      "brakes": {
+        "material": "^brake(_caliper)?$"
+      },
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "exhaust": {
+        "material": "^exhaust$"
+      },
+      "paint": "^paint$",
+      "glass": "^windows$",
+      "lens": "^lights_covers$",
+      "light_head": {
+        "material": "^headlights$",
+        "end": "front"
+      },
+      "light_reverse": {
+        "material": "^headlights$",
+        "end": "rear"
+      },
+      "light_tail": "^material$",
+      "light_indicator": "^orange$",
+      "chrome": "^chrome$",
+      "rubber": "^tyre$",
+      "rim": "^rims$",
+      "caliper": "^brake_caliper$",
+      "metal": "^brake$",
+      "trim": "^(black|black\\.001|headlighst2)$",
+      "plastic": "^(plastic_matte|dummy_black)$"
+    }
   },
   "kitsune": {
     "car": "Mazda RX-7 FD3S",
     "note": "fastback, RWD",
     "length": 4.295,
     "wheelbase": 2.425,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Mazda RX-7 FD",
+    "author": "Lexyc16",
+    "authorUrl": "https://sketchfab.com/Lexyc16",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "d35ff630df614771b82e7b2f59035b1e",
+      "url": "https://sketchfab.com/3d-models/mazda-rx-7-fd-d35ff630df614771b82e7b2f59035b1e"
     },
-    "input": "",
+    "input": "tmp/cars/d35ff630df614771b82e7b2f59035b1e",
     "forward": "+z",
     "exclude": null,
     "wheels": {
-      "match": "",
+      "match": "/Circle\\.0(08|09|10|11)_\\d+/",
       "brakes": null,
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "exhaust": {
+        "node": "/Cylinder\\.003_\\d+/"
+      },
+      "paint": "^Material\\.007$",
+      "glass": "^Material\\.003$",
+      "lens": "^Material\\.(008|016)$",
+      "light_head": "^Material\\.002$",
+      "light_tail": "^Material\\.017$",
+      "light_indicator": "^Material\\.018$",
+      "chrome": "^Material\\.009$",
+      "rubber": "^Material\\.011$",
+      "rim": "^Material\\.014$",
+      "trim": "^Material\\.(006|015)$",
+      "plastic": "^Material(\\.005)?$"
+    },
+    "pose": 3
   },
   "yurei": {
     "car": "Nissan Silvia S15 Spec-R",
     "note": "coupe, RWD",
     "length": 4.445,
     "wheelbase": 2.525,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Nissan Silvia",
+    "author": "zhe_kan",
+    "authorUrl": "https://sketchfab.com/zhe_kan",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "30e45aa381ca4fac8dc91f52e781124d",
+      "url": "https://sketchfab.com/3d-models/nissan-silvia-30e45aa381ca4fac8dc91f52e781124d"
     },
-    "input": "",
+    "input": "tmp/cars/30e45aa381ca4fac8dc91f52e781124d",
     "forward": "+z",
-    "exclude": null,
-    "wheels": {
-      "match": "",
-      "brakes": null,
-      "split": false
+    "exclude": {
+      "node": "/Number_\\d+/"
     },
-    "roles": {}
+    "wheels": {
+      "match": "/(Rim|Tire|bolt)(\\.\\d+)?_\\d+/",
+      "brakes": "/(Cylinder\\.005|Cube\\.013)_\\d+/",
+      "split": true
+    },
+    "roles": {
+      "paint": "^Car_paint$",
+      "glass": "^1_glass_window$",
+      "lens": "^1_glass_light$",
+      "light_head": "^1_glass_lump$",
+      "light_brake": {
+        "node": "/Wing\\.001_\\d+/"
+      },
+      "light_tail": "^Light_stop$",
+      "light_indicator": "^Light_signal$",
+      "chrome": "^(Chrom|1_mirror|Radiator\\.001)$",
+      "rubber": "^Tire$",
+      "rim": "^(material|Bolt)$",
+      "caliper": {
+        "node": "/Cube\\.013_\\d+/"
+      },
+      "metal": [
+        "^Breake$",
+        {
+          "material": "^Radiator$",
+          "node": "/Cylinder\\.005_\\d+/"
+        }
+      ],
+      "trim": "^1_plastik$",
+      "plastic": "^(Plastic|1_dark)$",
+      "exhaust": {
+        "node": "/Exhaust_\\d+/"
+      }
+    },
+    "triangles": 64000
   },
   "raijin": {
     "car": "Nissan Skyline GT-R R34",
     "note": "wide, AWD",
     "length": 4.6,
     "wheelbase": 2.665,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Nissan GTR R34 Skyline | GT-R Skyline",
+    "author": "Pooya_dh",
+    "authorUrl": "https://sketchfab.com/Pooya_dh",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "5eed440cfd094c5a8fdc9929eb43ab02",
+      "url": "https://sketchfab.com/3d-models/nissan-gtr-r34-skyline-gt-r-skyline-5eed440cfd094c5a8fdc9929eb43ab02"
     },
-    "input": "",
+    "input": "tmp/cars/5eed440cfd094c5a8fdc9929eb43ab02",
     "forward": "+z",
-    "exclude": null,
-    "wheels": {
-      "match": "",
-      "brakes": null,
-      "split": false
+    "exclude": {
+      "node": "/Plane\\.01[23]_2[78]/"
     },
-    "roles": {}
+    "wheels": {
+      "match": "/(Front Tire_30|BBack  Tire_31|Ring_32|Back   Ring_33|Ring\\.001_37|Breake_36)/",
+      "brakes": "/Breake_36/",
+      "split": true
+    },
+    "roles": {
+      "paint": [
+        "^Car_Paint_With_Flakes$",
+        {
+          "node": "/(Cube_7|Cube\\.003_15)/",
+          "material": "^Body_Color$"
+        }
+      ],
+      "glass": "^Glass$",
+      "lens": "^Glass_Sefid$",
+      "light_head": "^Nooor\\.001$",
+      "light_indicator": [
+        "^Orange_Light$",
+        {
+          "material": "^Orange__Light$",
+          "end": "front"
+        }
+      ],
+      "light_brake": {
+        "node": "/Sandogh_42/",
+        "material": "^Back_Lght$"
+      },
+      "light_reverse": "^(white_light|Material\\.005)$",
+      "light_tail": [
+        "^(Back_Lght|Material\\.001|BBack_LED)$",
+        {
+          "material": "^Orange__Light$",
+          "end": "rear"
+        }
+      ],
+      "chrome": "^(Miror|Logo|Exus|Ligh|Material)$",
+      "metal": [
+        "^Ceramic_brake_disc$",
+        {
+          "node": "/Front Light",
+          "material": "^Pich$"
+        }
+      ],
+      "rim": [
+        "^Material\\.004$",
+        {
+          "node": "/(Ring_32|Back   Ring_33)/",
+          "material": "^(Pich|Black)$"
+        }
+      ],
+      "rubber": "^(Tire|Air_Duct_Rubber|Rubber)$",
+      "caliper": "^Brake_Caliper$",
+      "trim": [
+        "^(Carbon_Fiber_04|Body_Color)$",
+        {
+          "node": "/Darz ",
+          "material": "^Black$"
+        }
+      ],
+      "plastic": "^(Black|Pich|Material\\.00[23]|Plastic\\.001)$",
+      "exhaust": {
+        "node": "/Cylinder\\.00[23]_"
+      }
+    },
+    "farExclude": {
+      "node": "/Plane(\\.00[123])?_(49|5[012])/"
+    }
   },
   "oni": {
     "car": "Ford Mustang GT",
-    "note": "muscle, RWD (S550: 4.784 m; S650: 4.811 m)",
+    "note": "muscle, RWD (S550: 4.784 m; S650: 4.811 m) – the model is a 2018 S550 facelift",
     "length": 4.784,
     "wheelbase": 2.72,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "width": 1.96,
+    "title": "Mustang_GT 2018",
+    "author": "Demonic Arts",
+    "authorUrl": "https://sketchfab.com/Jesterz86",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "dd4365565b6b4e0ea6c06a1ca4113e3e",
+      "url": "https://sketchfab.com/3d-models/mustang-gt-2018-dd4365565b6b4e0ea6c06a1ca4113e3e"
     },
-    "input": "",
-    "forward": "+z",
+    "input": "tmp/cars/dd4365565b6b4e0ea6c06a1ca4113e3e",
+    "forward": "-z",
     "exclude": null,
     "wheels": {
-      "match": "",
-      "brakes": null,
-      "split": false
+      "match": "/(Wheel_01_LR\\.00[234]|Caliper)/",
+      "brakes": "/Caliper/",
+      "split": true
     },
-    "roles": {}
+    "roles": {
+      "caliper": {
+        "node": "/Caliper"
+      },
+      "paint": "^CarPaint2$",
+      "lens": {
+        "node": "/(Glass\\.00[123]|Light)/",
+        "material": "^WindowGlass$"
+      },
+      "glass": "^WindowGlass$",
+      "light_head": "^material$",
+      "light_indicator": "^Material\\.006$",
+      "light_tail": "^Material\\.003$",
+      "light_reverse": "^Material\\.005$",
+      "rim": [
+        "^Weels$",
+        {
+          "node": "/Wheel_",
+          "material": "^Silver$"
+        }
+      ],
+      "chrome": "^(Chrome|Silver)$",
+      "rubber": "^material_15$",
+      "plastic": "^(Plastik|Black_Matt|Black)$",
+      "exhaust": {
+        "node": "/Coloured\\.002/"
+      }
+    }
   },
   "tora": {
-    "car": "Toyota Supra A80 Widebody",
-    "note": "wide, RWD (stock length; a widebody kit adds width, not length)",
+    "car": "Toyota Supra A80",
+    "note": "wide, RWD (stock A80 with the factory wing – no good CC BY widebody found)",
     "length": 4.515,
     "wheelbase": 2.55,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Toyota Supra",
+    "author": "AdamRichard",
+    "authorUrl": "https://sketchfab.com/AdamRichard",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "a0a1c592c6914020a9d1f7679346e703",
+      "url": "https://sketchfab.com/3d-models/toyota-supra-a0a1c592c6914020a9d1f7679346e703"
     },
-    "input": "",
+    "input": "tmp/cars/a0a1c592c6914020a9d1f7679346e703",
     "forward": "+z",
     "exclude": null,
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "/(Circle(\\.00\\d|\\.01[01])?_\\d+|Cylinder\\.00[2-5]_\\d+)/",
+      "brakes": "/Circle\\.(00[89]|01[01])_/",
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "paint": "^Material\\.006$",
+      "glass": "^Material\\.01[12]$",
+      "lens": "^Material\\.0(16|17|19|28)$",
+      "light_head": "^Material\\.008$",
+      "light_drl": "^Material\\.029$",
+      "light_indicator": "^Material\\.0(20|26|31)$",
+      "light_tail": "^Material\\.0(23|24)$",
+      "chrome": "^Material\\.0(04|22|25|27)$",
+      "rim": "^Material\\.002$",
+      "rubber": "^Material$",
+      "metal": "^Material\\.003$",
+      "caliper": "^Material\\.030$",
+      "trim": "^Material\\.013$",
+      "plastic": "^Material\\.0(01|05|07|09|10|14|15|18|21)$",
+      "exhaust": {
+        "node": "/Plane\\.001_21/"
+      }
+    }
   },
   "g81": {
     "car": "BMW M3 Competition Touring G81",
     "note": "sedan body, AWD (xDrive)",
     "length": 4.801,
     "wheelbase": 2.857,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "bmw-m3-competition-touring-2022",
+    "author": "MattDoesBlender",
+    "authorUrl": "https://sketchfab.com/MattDoesBlender",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "f9b0bb6cd6bc4195ac0872c9f3bdc138",
+      "url": "https://sketchfab.com/3d-models/bmw-m3-competition-touring-2022-f9b0bb6cd6bc4195ac0872c9f3bdc138"
     },
-    "input": "",
-    "forward": "+z",
-    "exclude": null,
+    "input": "tmp/cars/f9b0bb6cd6bc4195ac0872c9f3bdc138",
+    "forward": "-x",
+    "exclude": {
+      "node": "_gltfNode_(98_98)/"
+    },
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "_gltfNode_(17_9|18_10|20_13|21_14|22_15|23_16|24_17|25_18|85_84|87_86|88_87|89_88|9_89|10_2|11_3|12_4|30_24|33_27|35_29|38_32|61_58|68_65)/",
+      "brakes": "_gltfNode_(64_61|65_62|79_77|80_79|63_60|66_63|74_72|75_73|76_74|77_75|34_28|36_30)/",
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "light_brake": {
+        "node": "_gltfNode_(0_0|78_76)/"
+      },
+      "light_tail": {
+        "node": "_gltfNode_(7_67|69_66|81_80|2_12|73_71|8_78)/"
+      },
+      "light_head": {
+        "node": "_gltfNode_(1_1)/"
+      },
+      "light_drl": [
+        {
+          "node": "_gltfNode_(4_34)/"
+        },
+        "^blue$"
+      ],
+      "rubber": {
+        "material": "^black$",
+        "node": "_gltfNode_(17_9|18_10|20_13|21_14|22_15|23_16|24_17|25_18)/"
+      },
+      "rim": {
+        "node": "_gltfNode_(85_84|87_86|88_87|89_88)/"
+      },
+      "caliper": {
+        "node": "_gltfNode_(79_77|80_79|74_72|75_73|76_74|77_75)/"
+      },
+      "paint": "^body2$",
+      "glass": "^glasss$",
+      "chrome": "^(chrome|mirror)$",
+      "metal": "^07___Default8989$",
+      "trim": "^(black|refl_black)$",
+      "plastic": "^(material_0|wire_000000000)$"
+    },
+    "lamps": {
+      "head": 16,
+      "drl": 14
+    }
   },
   "e46": {
     "car": "BMW M3 E46",
     "note": "coupe, RWD",
     "length": 4.492,
     "wheelbase": 2.731,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "BMW M3 E46",
+    "author": "MMC Works",
+    "authorUrl": "https://sketchfab.com/mmcworks",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "f1b00ff37d504629b10031da32bc7497",
+      "url": "https://sketchfab.com/3d-models/bmw-m3-e46-f1b00ff37d504629b10031da32bc7497"
     },
-    "input": "",
+    "input": "tmp/cars/f1b00ff37d504629b10031da32bc7497",
     "forward": "+z",
-    "exclude": null,
+    "straighten": "/Empty(\\.001)?_(54|63)$",
+    "exclude": {
+      "node": "/(engine-rough|exhaust-pipe-0\\d|air-intake-rough)_\\d+/"
+    },
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "/(tire-|wheels-bbs|Brake Disc|Brake Hub|Brake Caliper)",
+      "brakes": "/Brake Caliper",
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "exhaust": {
+        "node": "/exhaust-tip_"
+      },
+      "light_drl": {
+        "node": "/angel-eyes-0"
+      },
+      "light_reverse": {
+        "node": "reverse-light_"
+      },
+      "light_indicator": {
+        "node": "/(side-indicator-light|headlight-indicator-bumps)_"
+      },
+      "lens": [
+        {
+          "node": "/(headlight-cover|fog-light-cover)_"
+        },
+        "^(Glass_-_Clear_-_Bumps|Glass-clear)$"
+      ],
+      "light_head": {
+        "material": "^Headlamp_bulb$",
+        "node": "/headlight-bulb(-indicator)?_"
+      },
+      "light_tail": "^(Glass_-_Red_-_Bump|Glass_ext-red|Glass_-_Red_-_Rough_0\\.4)$",
+      "rim": {
+        "material": "^Alu_ext$",
+        "node": "wheels-bbs"
+      },
+      "caliper": "Calipers",
+      "paint": "^Car_Paint_-_All_Colors$",
+      "glass": "^Glass_ext(-tinted)?$",
+      "chrome": "^(Metal_-_Chrome.*|Headlight_Metal|Alu_ext)$",
+      "metal": "^(Brake_Disc|Brake_Hub|Metal_ext_rough|MetalStainless.*)$",
+      "rubber": "^(tire-low|Rubber|Rubber_-_Black)$",
+      "trim": "^(Plastic_ext_gloss|Window_Border|Metal_-_Black_-_Rough_0\\.2|Int_glossy)$",
+      "plastic": "^(Plastic_ext_matt|Black_Diffuse|Internals|Plastic_int_matt|Momo_leather|Leather_BK_glossy)$"
+    }
   },
   "z33": {
     "car": "Nissan 350Z",
     "note": "fastback, RWD",
     "length": 4.315,
     "wheelbase": 2.65,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "Nissan 350Z",
+    "author": "barking_dogo",
+    "authorUrl": "https://sketchfab.com/barking_dogo",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "17ca0ac209fd4823878a013c0dff82bf",
+      "url": "https://sketchfab.com/3d-models/nissan-350z-17ca0ac209fd4823878a013c0dff82bf"
     },
-    "input": "",
+    "input": "tmp/cars/17ca0ac209fd4823878a013c0dff82bf",
     "forward": "+z",
-    "exclude": null,
+    "exclude": {
+      "node": "/Text/Text_"
+    },
     "wheels": {
-      "match": "",
-      "brakes": null,
+      "match": "/Cylinder\\.(001|002|003|013)/Cylinder",
+      "brakes": {
+        "material": "^(Material\\.003|Brake_disc\\.001)$"
+      },
       "split": false
     },
-    "roles": {}
+    "roles": {
+      "exhaust": {
+        "node": "/Cylinder\\.008/"
+      },
+      "paint": "^Car_Paint\\.001$",
+      "glass": "^Window_Glass$",
+      "lens": "^Car_windshield_glass$",
+      "light_head": "^Lights\\.001$",
+      "light_tail": "^Red_car_lights_glass$",
+      "light_reverse": "^Lights$",
+      "light_indicator": "^Material\\.004$",
+      "chrome": "^(Lights\\.002|Metal|Logo|AR3DMat_Procedural_Realistic_Mirror)$",
+      "metal": "^(Metal\\.001|Brake_disc\\.001)$",
+      "rubber": "^Rubber_Black$",
+      "rim": [
+        "^(Disk|Logo)\\.001$",
+        {
+          "material": "^Car_plastic_dark$",
+          "node": "/Cylinder\\.(001|002|003|013)/Cylinder"
+        }
+      ],
+      "caliper": "^Material\\.003$",
+      "trim": "^(Material\\.009|Windshiels)$",
+      "plastic": "^(Dark|Car_plastic_dark|Procedural_Felt|Procedural_leather|Car_Textured_Rough_Plastic|Material\\.007)$"
+    }
   },
   "gr86": {
     "car": "Toyota GR86",
-    "note": "coupe, RWD",
+    "note": "coupe, RWD (ZN8, street-tuned: deep-lip wheels, wing)",
     "length": 4.265,
     "wheelbase": 2.575,
-    "title": "",
-    "author": "",
-    "authorUrl": "",
-    "licence": "",
-    "licenceUrl": "",
+    "title": "GR86",
+    "author": "Whill",
+    "authorUrl": "https://sketchfab.com/sr._suave_edits",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
     "source": {
-      "uid": "",
-      "url": ""
+      "uid": "94a109d02d014f93873a812213ef5b51",
+      "url": "https://sketchfab.com/3d-models/gr86-94a109d02d014f93873a812213ef5b51"
     },
-    "input": "",
+    "input": "tmp/cars/94a109d02d014f93873a812213ef5b51",
     "forward": "+z",
-    "exclude": null,
+    "exclude": [
+      {
+        "node": "/(Ceiling Lamps|Plane\\.041_|Plane\\.002_466)"
+      },
+      {
+        "material": "^(Material\\.001|Material\\.002|Material\\.072|2022_Subaru_BRZ_BrakeRotors2)$"
+      }
+    ],
     "wheels": {
-      "match": "",
+      "match": "/LHR_M lip_",
       "brakes": null,
       "split": false
     },
-    "roles": {}
+    "splitEnds": "^2022_Subaru_BRZ_DRLs$",
+    "roles": {
+      "paint": "^PINTURA$",
+      "glass": "^(2022_Subaru_BRZ_Windows|Material\\.00[67])$",
+      "light_head": "^2022_Subaru_BRZ_HeadLightsGlass$",
+      "light_drl": {
+        "material": "^2022_Subaru_BRZ_DRLs$",
+        "end": "front"
+      },
+      "light_reverse": {
+        "material": "^2022_Subaru_BRZ_DRLs$",
+        "end": "rear"
+      },
+      "light_indicator": "^2022_Toyota_GR_86_SideLights$",
+      "light_tail": [
+        "^2022_Subaru_BRZ_(BrakeLightsGlass|RedMain|Red1|RedGlass|DarkRed|Reflectors)$",
+        {
+          "material": "^Material$",
+          "node": "/Object_323$"
+        }
+      ],
+      "chrome": "^(2022_Subaru_BRZ_Mirrors|2022_Subaru_BRZ_Exhausts|LHR_M_chrome)$",
+      "rim": "^(LHR-M_base|LHR-M_centercap)$",
+      "rubber": "^r888r$",
+      "trim": [
+        "^(2022_Subaru_BRZ_(BlackChrome|ChromeTrims|WindowsTrims)|2022_Toyota_GR_86_BlackLines|Deck|Post_2)$",
+        {
+          "node": "/spolier_Deck"
+        }
+      ],
+      "plastic": "^(2022_Subaru_BRZ_(Black1|BlackTrims|Interior|UnderCarrier|Default_Material)|2022_Toyota_GR_86_.*|LHR_M_black)$",
+      "exhaust": {
+        "material": "^2022_Subaru_BRZ_Exhausts$"
+      }
+    }
+  },
+  "f21": {
+    "car": "BMW M140i F21",
+    "note": "hatch, RWD – the model is the 5-door F20 M140i (LCI); no 3-door F21 with a usable licence on Sketchfab",
+    "length": 4.32,
+    "wheelbase": 2.69,
+    "title": "2018 BMW M140i",
+    "author": "Ddiaz Design",
+    "authorUrl": "https://sketchfab.com/ddiaz-design",
+    "licence": "CC BY 4.0",
+    "licenceUrl": "http://creativecommons.org/licenses/by/4.0/",
+    "source": {
+      "uid": "24f09cc46773424fb2a3922427f1c37d",
+      "url": "https://sketchfab.com/3d-models/2018-bmw-m140i-24f09cc46773424fb2a3922427f1c37d"
+    },
+    "input": "tmp/cars/24f09cc46773424fb2a3922427f1c37d",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "_(Rim|Tyres|Break)/",
+      "brakes": "_Calipers/",
+      "split": true
+    },
+    "splitEnds": "^iWhite_Bumpy_Lines1$",
+    "roles": {
+      "paint": "^iBody1$",
+      "glass": "^iGlass_Clear_Windshield1$",
+      "lens": "^iGlass_Clear1$",
+      "light_drl": "^iWhite_Glow1$",
+      "light_reverse": {
+        "material": "^iWhite_Bumpy_Lines1$",
+        "end": "rear"
+      },
+      "light_head": "^i(Aluminium_Light1|Aluminium_dark1|White_Bumpy_Squares1|White_Bumpy_Lines1)$",
+      "light_tail": "^iRed_Glow1$",
+      "light_brake": "^iRed_Bumpy1$",
+      "chrome": "^i(Chrome1|Mirror1)$",
+      "exhaust": {
+        "material": "^iDarkChrome1$"
+      },
+      "rubber": "^iTyres1$",
+      "rim": "^iRim1$",
+      "caliper": "^iCalipers1$",
+      "trim": "^i(Black_Glossy1|Black_Bumpy1)$",
+      "plastic": "^i(Black_Rough1|Black1|Plastic_Anthracite1|Body_Dark_Metallic1)$"
+    }
   }
 }

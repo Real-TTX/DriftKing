@@ -4,7 +4,7 @@
 // Instanced: at most four draw calls for a whole forest, scale/turn/colour varying per tree.
 
 import * as THREE from 'three';
-import { canvasTexture, mergeGeometries, rng } from '../render/kit.js';
+import { canvasTexture, mergeGeometries, rng, shadowOnly } from '../render/kit.js';
 import { instanced, isPbr, materialsOf, ownMaterial, paint, perWorld, seedFrom } from './props-common.js';
 
 /** The tree in its own frame (scale 1): crown from 2.2 m to 9.6 m, ~2.2 m wide at the bottom. */
@@ -298,6 +298,9 @@ export function buildTrees(root, spots, random, options = {}) {
             core: tierGeometry(high ? 4 : 3, 6, 0.52, { underside: 'none', palette: CORE_PALETTE }),
             // medium: one tier less than it had (the pass stayed above the 400 k triangles in view of RENDERING.md §10)
             cards: high ? cardGeometry(8, 6) : cardGeometry(5, 5),
+            // high: the crown's shadow comes from an opaque silhouette (a shadow proxy) – the layered, alpha-tested cards in the moon's
+            // shadow map cost ≈ 21 ms per frame on the 610M (the pass); moonlit forest shade reads the same at night
+            shadow: high ? tierGeometry(4, 7, 0.92, { underside: 'none' }) : null,
             bark: mats.bark({ color: 0xc0a088 }),
             needles: needleMaterial(mats, 0xc4ceb8),
         } : null,
@@ -339,7 +342,8 @@ export function buildTrees(root, spots, random, options = {}) {
             const colors = cell.near.map(t => t.colour);
             group.add(instanced(nearGeometry.trunk, barkMaterial, matrices, { colors: cell.near.map(t => t.bark), castShadow: high, receiveShadow: true, name: 'trees-trunks' }));
             group.add(instanced(nearGeometry.core, shade, matrices, { colors, receiveShadow: true, name: 'trees-cores' }));
-            group.add(instanced(nearGeometry.cards, cardMaterial, matrices, { colors, castShadow: high, receiveShadow: true, name: 'trees-cards' }));
+            group.add(instanced(nearGeometry.cards, cardMaterial, matrices, { colors, receiveShadow: true, name: 'trees-cards' }));
+            if (nearGeometry.shadow) group.add(shadowOnly(instanced(nearGeometry.shadow, shade, matrices, { name: 'trees-shadow' })));
         }
     }
     root.add(group);

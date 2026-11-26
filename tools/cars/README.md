@@ -47,10 +47,12 @@ end is the front (the `guess` line).
   "car": "Nissan 200SX S14a",                  // shown in the credits
   "length": 4.52,                              // real length in metres: the model is scaled to it
   "wheelbase": 2.525,                          // a check: prepare warns when the measured one is > 5 % off
+  "width": 1.695,                              // optional: real body width (no mirrors) – squeezes a model built too wide (x only)
   "title": "…", "author": "…", "authorUrl": "…", "licence": "CC BY 4.0", "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
   "source": { "uid": "<uid>", "url": "https://sketchfab.com/3d-models/…" },
   "input": "tmp/cars/<uid>",                   // the folder (scene.gltf) or a .glb
   "forward": "-z",                             // the model's front axis (+x -x +z -z); "up": "+z" and "rotate": [x, y, z] (degrees) if needed
+  "straighten": "/Empty_54$",                  // node path regex: those nodes lose their own rotation (front wheels the model shows steered)
   "exclude": { "node": "Plane|Driver|Engine" },// parts to drop (rules: below)
   "wheels": {
     "match": "/wheel_(fl|fr|rl|rr)/",          // node path regex of everything that spins (tyre, rim, nuts…)
@@ -65,7 +67,7 @@ end is the front (the `guess` line).
     "light_drl": "DRL",
     "light_tail": "Taillight",
     "light_brake": { "node": "third_brake" },
-    "light_reverse": "Reverse",
+    "light_reverse": "Reverse",                // or { "material": "Lamp_White", "end": "rear" } (with "splitEnds", below)
     "chrome": "Chrome",
     "rim": { "node": "/rim" },
     "rubber": "Tire|Tyre",
@@ -77,17 +79,22 @@ end is the front (the `guess` line).
   },
   "triangles": 80000,                          // near budget (whole car), default 80000
   "farTriangles": 9000,                        // far model, default 9000
+  "farExclude": { "node": "/Grille_mesh" },    // optional: parts left out of the far model only (fine meshes that do not simplify)
   "textureSize": 1024, "smallTextureSize": 512,// base colour/emissive, other maps
   "keepTextures": [],                          // replaced roles whose texture should stay (e.g. "rubber" for tyre lettering)
+  "splitEnds": "Lamp_White",                   // material rule: those parts are cut into a front and a rear half (one lamp material for
+                                               // head and reversing lamps); role rules may then ask for "end": "front" | "rear"
+  "singleSided": "TailLens|HeadInner",         // material rule: those lamp/kept materials become one-sided (lamps glowing into the cabin)
   "paintable": true,                           // false: keep the model's paint (a car without paint choice)
   "lamps": { "head": 6, "drl": 4 },            // emissive strength overrides
   "mounts": { "exhaust": [[-0.45, 0.28, -2.28]] },  // override lamp/exhaust points (car frame, metres)
-  "profile": { "cowl": 0.95, "aFront": 0.62 }  // hood camera: bonnet height, windscreen base
+  "profile": { "cowl": 0.95, "aFront": 0.62 }, // hood camera: bonnet height, windscreen base
+  "pose": 3                                    // animated models: take every animated node in its pose at 3 s (pop-up lamps up)
 }
 ```
 
-Rules (`exclude`, `wheels.match`, `wheels.brakes`, role values): a string, or `{ "material": re, "node": re, "mesh": re }` (all given ones
-must match, case-insensitive), or a list of those (any). For `exclude` and the wheels a plain string is a **node path** regex; for roles a
+Rules (`exclude`, `wheels.match`, `wheels.brakes`, role values): a string, or `{ "material": re, "node": re, "mesh": re, "end": re }` (all
+given ones must match, case-insensitive; `end` – roles only – is `front` or `rear` by the part's centre), or a list of those (any). For `exclude` and the wheels a plain string is a **node path** regex; for roles a
 plain string is a **material name** regex. Node paths are the `inspect.mjs` paths (`Sketchfab_model/…/wheel_FL_12/Object_7`).
 
 Roles: `paint`, `glass`, `lens`, `chrome`, `metal`, `rubber`, `rim`, `trim`, `plastic`, `caliper` are replaced by DriftKing's materials

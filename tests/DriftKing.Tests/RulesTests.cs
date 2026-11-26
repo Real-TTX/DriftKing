@@ -164,7 +164,7 @@ public sealed class RulesTests
     {
         var cars = SeedContent.Cars();
         // the offline game numbers the cars by their place: the first eight stay where they are, new ones come after them
-        Assert.Equal(["kaze", "hotaru", "ronin", "kitsune", "yurei", "raijin", "oni", "tora", "s14a", "g81", "e46", "z33", "gr86"], cars.Select(c => c.Key));
+        Assert.Equal(["kaze", "hotaru", "ronin", "kitsune", "yurei", "raijin", "oni", "tora", "s14a", "g81", "e46", "z33", "gr86", "f21"], cars.Select(c => c.Key));
         Assert.Equal(cars.Count, cars.Select(c => c.SortOrder).Distinct().Count());
         Assert.Single(cars, c => c.Price == 0);
         Assert.Equal("kaze", Starter.Key);
@@ -185,7 +185,7 @@ public sealed class RulesTests
         var order = sorted.Select(c => c.Key).ToList();
         Assert.True(order.IndexOf("kaze") < order.IndexOf("s14a") && order.IndexOf("s14a") < order.IndexOf("yurei"));
         Assert.Equal(CarDrive.AWD, cars.First(c => c.Key == "g81").Drive);
-        Assert.All(new[] { "s14a", "e46", "z33", "gr86" }, key => Assert.Equal(CarDrive.RWD, cars.First(c => c.Key == key).Drive));
+        Assert.All(new[] { "s14a", "e46", "z33", "gr86", "f21" }, key => Assert.Equal(CarDrive.RWD, cars.First(c => c.Key == key).Drive));
     }
 
     [Fact]

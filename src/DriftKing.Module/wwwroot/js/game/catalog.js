@@ -36,6 +36,7 @@ export const CARS = Object.freeze({
     e46: { name: 'BMW M3 E46', body: 'coupe', drive: 'RWD', power: 7, grip: 6, weight: 7, steering: 7 },
     z33: { name: 'Nissan 350Z', body: 'fastback', drive: 'RWD', power: 6, grip: 7, weight: 6, steering: 7 },
     gr86: { name: 'Toyota GR86', body: 'coupe', drive: 'RWD', power: 4, grip: 6, weight: 4, steering: 6 },
+    f21: { name: 'BMW M140i F21', body: 'hatch', drive: 'RWD', power: 7, grip: 6, weight: 6, steering: 8 },
 });
 
 /** The tuning parts, levels 0..MAX_LEVEL. */

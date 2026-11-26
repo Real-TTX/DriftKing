@@ -7,7 +7,7 @@ Guidance for working in this repository. Keep it in sync with the code.
 A 3D night street-drift game in the browser, in the spirit of Japanese drift culture (touge, parking decks, harbour, neon city) – **real cars and brands
 are allowed (the owner holds the licences); maps, art and names otherwise are our own; never copy a film, a game, an anime or their characters, cars or
 liveries (no replicas)**. 3D models of real cars only with a licence that allows it (CC-BY/CC0), credited in the game (`data/car-credits.json`, the GLB pipeline). Realistic night look on medium/high (PBR materials, reflections, bloom, real lights, detailed cars and maps – docs/RENDERING.md); low quality stays as cheap as the old low-poly look.
-Modes free ride / score attack / race, four maps (`pass`, `deck`, `harbor`, `city`), a garage (thirteen real cars, tuning, paint, neon, decals), competitions
+Modes free ride / score attack / race, four maps (`pass`, `deck`, `harbor`, `city`), a garage (fourteen real cars, tuning, paint, neon, decals), competitions
 with medals (admin-managed), bots, online rooms, a rich HUD (speed, rpm/gear, drift angle, pedal positions, steering, chain/multiplier, minimap).
 
 DriftKing is a **plugin of MatGame** (`../MatGame`: portal, accounts/guests, device sign-in, `/Admin`, discovery for the apps; read `../MatGame/CLAUDE.md`).
@@ -67,11 +67,13 @@ src/DriftKing.Module/wwwroot
                         for GPU work outside a frame), environment (PMREM reflection maps night/dusk/garage), textures (procedural PBR texture recipes),
                         materials (the material factory per quality), lights (LightRig: fixed pool of real lights, presets), kit (merging, glows, pools,
                         UVs in metres, shared/disposal), world/ (env: sky, fog, fill light; world: build + ctx; course, road, props, maps/*),
-                        car/ (models, physics, bot), run/ (run, drift scoring, camera), fx/, hud, input, audio, scenes/ (menu backdrop, garage turntable)
+                        car/ (models, model-glb: the real GLB cars, physics, bot), credits, run/ (run, drift scoring, camera), fx/, hud, input, audio, scenes/ (menu backdrop, garage turntable)
+  models/cars           the real car models (<key>.glb, built by tools/cars from CC BY Sketchfab models; data/car-models.json + car-credits.json)
   lib/three             three.js r187 (three.module.js + three.core.js) and addons/ (postprocessing, shaders, environments, utils, geometries, objects)
   dev/                  previews (drive, garage, maps, materials: the look development board)
 src/DriftKing.Local     DriftKingLocal (ILocalGame: API + hub + clock), LocalProfile
 src/DriftKing.App       the Windows app (MatGame.Shell + wwwroot embedded + DriftKingLocal)
+tools/cars              the car model pipeline (download, inspect, prepare; cars.json = source, licence, mapping per car) – tools/cars/README.md
 tests/DriftKing.Tests   RulesTests, RoomTests, LocalGameTests
 docs/PROTOCOL.md        API, hub, who decides what, offline
 docs/RENDERING.md       the rendering contract: quality tiers, post, reflections, textures, materials, lights, sky, budgets, realism reference
@@ -86,6 +88,6 @@ docs/RENDERING.md       the rendering contract: quality tiers, post, reflections
 - Map keys (`pass`, `deck`, `harbor`, `city`) and body keys (`coupe`, `hatch`, `sedan`, `fastback`, `wide`, `muscle`) are contracts (DB, catalog.js, the 3D code): never rename one.
 - Car keys are contracts too and the key of the 3D model (`CarView.key`; a car without a model of its own falls back to its body): `kaze` S13 (starter), `hotaru` AE86,
   `ronin` JZX100, `kitsune` FD3S, `yurei` S15, `raijin` R34 (AWD), `oni` Mustang GT, `tora` Supra A80, `s14a` 200SX S14a, `g81` M3 Touring (AWD), `e46` M3 E46,
-  `z33` 350Z, `gr86` GR86. `SeedContent.Cars` keeps its order (the offline game numbers the cars by their place): new cars go to the end, the menus sort
+  `z33` 350Z, `gr86` GR86, `f21` M140i F21. `SeedContent.Cars` keeps its order (the offline game numbers the cars by their place): new cars go to the end, the menus sort
   by `SortOrder`; `catalog.js CARS` mirrors the list (a test). Renamed seed texts: `SeedContent.FormerCars` + `Refresh` (only rows that still carry the old text).
 - Scale: 1 unit = 1 metre.

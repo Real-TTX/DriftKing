@@ -45,6 +45,9 @@ public static class SeedContent
             "V6-Sauger mit Drehmoment von unten, kurzer Radstand: quer kommt er leicht, halten will gelernt sein."),
         Car("gr86", "Toyota GR86", "coupe", CarDrive.RWD, 4, 6, 4, 6, 10000, 2, "#2f6bff", 25,
             "Boxer-Sauger, Heckantrieb, Sperre ab Werk: der ehrliche Einstieg in die neue Zeit."),
+        Car("f21", "BMW M140i F21", "hatch", CarDrive.RWD, 7, 6, 6, 8, 33500, 4, "#2f6bff", 48,
+            "Der letzte Kompakte mit Reihensechser und Heckantrieb: 340 PS Turbo, kurzer Radstand, viel Drehmoment von unten – "
+            + "kommt auf Zug sofort quer, will aber mit Gefühl gehalten werden."),
     ];
 
     /// <summary>

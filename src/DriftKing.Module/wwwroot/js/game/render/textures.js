@@ -312,7 +312,9 @@ function dataTexture(data, n, { srgb = false, tile = [1, 1], name = '' } = {}) {
     t.magFilter = THREE.LinearFilter;
     t.minFilter = THREE.LinearMipmapLinearFilter;
     t.generateMipmaps = true;
-    t.anisotropy = Math.min(8, maxAnisotropy());
+    // the albedo keeps its detail at grazing angles (8×); normal and ORM maps get 2×: a sharper normal far away would only sparkle (the
+    // macro layer's specular anti-aliasing widens it again), and 8× on the data maps cost ≈ 1.2 ms per frame on the 610M (pass, city, medium)
+    t.anisotropy = Math.min(srgb ? 8 : 2, maxAnisotropy());
     t.repeat.set(1 / tile[0], 1 / tile[1]);
     t.needsUpdate = true;
     return t;

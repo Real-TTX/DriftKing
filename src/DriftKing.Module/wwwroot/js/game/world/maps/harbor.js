@@ -7,7 +7,7 @@
 
 import * as THREE from 'three';
 import { buildCones, buildStartLine, coneSpots } from '../road.js';
-import { rng } from '../../render/kit.js';
+import { drawLast, rng } from '../../render/kit.js';
 import { LIGHT_PRESETS } from '../../render/lights.js';
 import { Batch, HARBOR, SODIUM, block, extrude, harborPalette, slab, tube } from './harbor-parts.js';
 import { Decals, groundText } from './harbor-decals.js';
@@ -52,7 +52,9 @@ export function build(ctx) {
     buildLand(ctx, parts);
     buildGround(ctx, parts, slots);
 
-    batch.build(root, { receiveShadow: true });
+    // the land around the port lies under everything: drawn last, so only its visible pixels are shaded
+    const gravel = harborPalette(ctx.materials).gravel;
+    drawLast(...batch.build(root, { receiveShadow: true }).filter(mesh => mesh.material === gravel));
     yard.build(root);
     decals.build(root);
     streaks.build(root);
