@@ -15,7 +15,7 @@
     <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
 </head>
 <body>
-    <!-- garage.html?body=coupe&index=0&quality=medium  (or ?backdrop=city: the menu backdrop of that map)
+    <!-- garage.html?body=coupe&index=0&quality=medium&car=s14a  (or ?backdrop=city: the menu backdrop of that map; car: a car key with a real model)
          the buttons bottom right switch the picture quality live (the scene rebuilds itself); window.garage.show(car) swaps the car -->
     <div id="dk-stage" class="stage"></div>
     <div id="info"></div>
@@ -40,7 +40,10 @@
             const { createGarageScene } = await import('./js/game/scenes/garage.js');
             const garage = await createGarageScene(stage);
             let index = Number(q.get('index') ?? 0);
-            garage.show(sampleCar(q.get('body') ?? 'coupe', index));
+            const first = sampleCar(q.get('body') ?? 'coupe', index);
+            if (q.get('car')) first.key = q.get('car');
+            if (q.get('paint')) first.paint = q.get('paint');
+            garage.show(first);
             for (const body of SAMPLE_BODIES) {
                 const b = document.createElement('button');
                 b.textContent = body;

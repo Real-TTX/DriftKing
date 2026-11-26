@@ -11,6 +11,7 @@ import { playScreens } from './menu-play.js';
 import { garageScreen } from './menu-garage.js';
 import { createBackdrop } from './scenes/backdrop.js';
 import { createGarageScene } from './scenes/garage.js';
+import { showCredits } from './credits.js';
 
 const root = () => document.getElementById('dk-menu');
 const top = () => document.getElementById('dk-top');
@@ -383,6 +384,7 @@ async function settingsScreen(el) {
             <div class="row">
                 ${host.isApp ? raw('<button class="btn" data-servers>Server</button>') : ''}
                 ${session.mode === 'online' ? raw('<button class="btn btn--ghost" data-logout>Abmelden</button>') : ''}
+                <button class="btn btn--ghost" data-credits>Credits</button>
             </div>
             <p class="version">DriftKing ${session.version || ''}</p>
         </div></div>`;
@@ -393,6 +395,7 @@ async function settingsScreen(el) {
         if (t.name === 'music') audio.music(Number(t.value) > 0);
     });
     $('[data-servers]', body)?.addEventListener('click', () => show('servers'));
+    $('[data-credits]', body)?.addEventListener('click', () => showCredits());
     $('[data-logout]', body)?.addEventListener('click', async e => {
         if (!(await confirmBox('Abmelden?', 'Gäste verlieren ihren Fortschritt, wenn sie sich abmelden.', { yes: 'Abmelden', danger: true }))) return;
         busy(e.target, async () => {

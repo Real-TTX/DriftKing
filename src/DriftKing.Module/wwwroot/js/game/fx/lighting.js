@@ -5,7 +5,7 @@
 // Smoke scatters forwards: a puff between the camera and a lamp glows (Henyey–Greenstein phase).
 //   const lighting = new FxLighting(world);                  // world of buildWorld (or { env, lights, scene, quality })
 //   lighting.prepare(camera.position, box);                  // once per frame, box = where the particles are
-//   lighting.sample(x, y, z, out);                           // out.r/g/b: light towards the camera (× the albedo = the colour)
+//   lighting.sample(x, y, z, out, radius);                   // out.r/g/b: light towards the camera (× the albedo = the colour)
 
 const G = 0.5;
 const G2 = G * G;
@@ -108,8 +108,12 @@ export class FxLighting {
         for (const r of this.carSources) this.records.push(r);
     }
 
-    /** The light a puff at (x, y, z) sends towards the eye (linear rgb, before the albedo) into out. */
-    sample(x, y, z, out) {
+    /**
+     * The light a puff at (x, y, z) sends towards the eye (linear rgb, before the albedo) into out. radius: the puff's size (m) – a big puff
+     * right in front of a lamp is lit over its whole volume, not at its centre: it never counts as nearer to a lamp than its radius.
+     */
+    sample(x, y, z, out, radius = 0) {
+        const near2 = Math.max(1, radius * radius);
         let r = this.ambient.r;
         let g = this.ambient.g;
         let b = this.ambient.b;
@@ -137,10 +141,10 @@ export class FxLighting {
                 if (c <= s.coneCos) continue;
                 spot = c >= s.penumbraCos ? 1 : smooth((c - s.coneCos) / (s.penumbraCos - s.coneCos));
             }
-            // three's physically based fall-off: 1 / d^decay, cut smoothly at the reach (a puff is big: never nearer than 1 m to a lamp)
+            // three's physically based fall-off: 1 / d^decay, cut smoothly at the reach (a puff is big: never nearer than its radius, 1 m at least)
             const q = d2 / (s.reach * s.reach);
             const cut = 1 - q * q;
-            const falloff = (cut * cut) / Math.max(s.decay === 2 ? d2 : Math.pow(d, s.decay), 1);
+            const falloff = (cut * cut) / Math.max(s.decay === 2 ? d2 : Math.pow(d, s.decay), near2);
             const mu = ux * ex + uy * ey + uz * ez;
             const phase = Math.min(3.5, (1 - G2) / Math.pow(1 + G2 - 2 * G * mu, 1.5));
             const k = falloff * spot * phase * INV_4PI;

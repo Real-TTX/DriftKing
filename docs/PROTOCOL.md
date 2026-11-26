@@ -41,6 +41,8 @@ Fehler: `400 { error, field }`, `401` nicht angemeldet, `403` verboten, `426 { e
 `CarView` = `{ id, carId, key, name, body, drive: 'RWD'|'AWD', paint, rims, neon, decal, number, levels { engine, turbo, suspension, tires, steering },
 spec { massKg, powerKw, topSpeedKmh, gripFront, gripRear, steerLockDeg, handbrakeGrip, stability, drive, gears } }` – `spec` kommt immer vom Server
 (`Tuning.SpecOf`); `js/game/catalog.js specOf` spiegelt die Formel nur für Vorschauen.
+`key` ist der Schlüssel des Autos und zugleich der seines 3D-Modells (`js/game/car`, z. B. `s14a`); ein Schlüssel ohne eigenes Modell fällt auf
+die Karosserie `body` zurück. `DealerCarView.key` ebenso.
 
 ## Hub (`/driftking/hub`, SignalR)
 

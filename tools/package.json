@@ -2,9 +2,16 @@
   "name": "driftking-tools",
   "private": true,
   "type": "module",
-  "description": "Developer tools of DriftKing (screenshots with the installed Edge through Playwright). Not part of the game.",
+  "description": "Developer tools of DriftKing: screenshots with the installed Edge through Playwright, the car model pipeline (cars/: Sketchfab download, inspect, prepare). Not part of the game.",
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
+    "draco3dgltf": "^1.5.9",
+    "fflate": "^0.8.3",
     "fontkit": "^3.0.0",
-    "playwright-core": "^1.56.0"
+    "meshoptimizer": "^1.3.0",
+    "playwright-core": "^1.56.0",
+    "sharp": "^0.35.5"
   }
 }

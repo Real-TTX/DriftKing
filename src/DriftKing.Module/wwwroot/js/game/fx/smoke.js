@@ -84,6 +84,12 @@ const FRAGMENT = /* glsl */ `
 
 /** The albedo of tyre smoke (linear): a light, slightly cool grey. */
 const ALBEDO = { r: 0.66, g: 0.66, b: 0.7 };
+/**
+ * The light a puff may take before it is compressed (linear, before the albedo): from KNEE up it rolls off softly towards LIMIT. A puff in the
+ * beam of a car close behind (backlit, forward scattering) still glows white, but as a lit cloud, not as a burning ball that hides the car.
+ */
+const KNEE = 0.7;
+const LIMIT = 2.2;
 /** A light breeze (m/s) that carries the old smoke away. */
 const WIND = { x: 0.45, z: 0.25 };
 
@@ -208,10 +214,13 @@ export class Smoke {
             p.b = this.unlit.b;
             return;
         }
-        const l = this.lighting.sample(p.x, p.y, p.z, this.light);
-        p.r = l.r * ALBEDO.r;
-        p.g = l.g * ALBEDO.g;
-        p.b = l.b * ALBEDO.b;
+        const l = this.lighting.sample(p.x, p.y, p.z, this.light, p.radius);
+        const peak = Math.max(l.r, l.g, l.b);
+        // the hue stays, only the strength is compressed
+        const k = peak > KNEE ? (KNEE + (peak - KNEE) / (1 + (peak - KNEE) / (LIMIT - KNEE))) / peak : 1;
+        p.r = l.r * k * ALBEDO.r;
+        p.g = l.g * k * ALBEDO.g;
+        p.b = l.b * k * ALBEDO.b;
     }
 
     /**

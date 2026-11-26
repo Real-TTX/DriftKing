@@ -15,7 +15,7 @@
 </head>
 <body>
     <!-- drive.html?map=pass|deck|harbor|city&body=coupe&mode=freeride|score|race&bots=3&time=night|dusk&quality=low|medium|high
-         &duration=120&laps=2&autopilot=1&goals=1&camera=chase|near|hood|orbit&echo=1  – a run without a server (the own car with the keyboard or the autopilot);
+         &duration=120&laps=2&autopilot=1&goals=1&camera=chase|near|hood|orbit&echo=1&car=s14a&botcars=kaze,g81  – a run without a server (the own car with the keyboard or the autopilot);
          echo=1 adds a remote seat that replays the own car 1 s later through run.remote (tests the network path) -->
     <div id="dk-stage" class="stage"></div>
     <div id="dk-hud" class="hud" hidden></div>
@@ -37,10 +37,13 @@
         const mode = q.get('mode') ?? 'score';
         const bots = Number(q.get('bots') ?? 3);
         const body = q.get('body') ?? 'coupe';
-        const seats = [{ seat: 0, name: 'Du', kind: 'me', car: sampleCar(body, 0) }];
+        // &car=<key>: the own car shows that car key's real model (data/car-models.json); &botcars=a,b: the bots' keys
+        const withKey = (car, k) => (k ? { ...car, key: k } : car);
+        const botKeys = q.get('botcars')?.split(',') ?? [];
+        const seats = [{ seat: 0, name: 'Du', kind: 'me', car: withKey(sampleCar(body, 0), q.get('car')) }];
         const names = ['Kaito', 'Rin', 'Sora', 'Yuna', 'Haru', 'Mio', 'Ren'];
         for (let k = 0; k < bots; k++) {
-            seats.push({ seat: k + 1, name: names[k % names.length], kind: 'bot', skill: 0.35 + (k / Math.max(1, bots - 1)) * 0.6, car: sampleCar(SAMPLE_BODIES[(k + 1) % SAMPLE_BODIES.length], k + 1) });
+            seats.push({ seat: k + 1, name: names[k % names.length], kind: 'bot', skill: 0.35 + (k / Math.max(1, bots - 1)) * 0.6, car: withKey(sampleCar(SAMPLE_BODIES[(k + 1) % SAMPLE_BODIES.length], k + 1), botKeys[k % Math.max(1, botKeys.length)]) });
         }
         if (q.get('echo')) seats.push({ seat: 9, name: 'Echo', kind: 'remote', car: sampleCar('muscle', 5) });
         const pause = document.getElementById('pause');

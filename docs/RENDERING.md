@@ -23,6 +23,7 @@ lighting for tuning). Use it before you put a material into a map.
 10. [Budgets (measured)](#10-budgets-measured)
 11. [Realism reference](#11-realism-reference)
 12. [Notes for phase 2](#12-notes-for-phase-2)
+13. [Real car models (GLB)](#13-real-car-models-glb)
 
 ## 1. Pipeline and quality tiers
 
@@ -290,6 +291,26 @@ the light pool is fixed – register sources, never add `Light`s to the scene; s
 prefer emissive + bloom over extra lights for far lamps; keep transparent overdraw (smoke, glows, glass) small; textures: get them from
 `ctx.textures`, never per object.
 
+**Phase 2 maps (measured after the map polish, same 610M, 1366 × 768, dpr 1, uncapped):** the map alone – `dev/maps.html?view=road&at=0.2`
+(camera 3 m above the course, no cars), plain mean of 800–1000 frames, A/B/C in one session against phase 1 (0d77c11) and the phase-2
+commit (c1d9e72). The machine was shared with other jobs (spread ±10 %, single A/B/A toggles up to ±5 ms – compare rows, not digits).
+
+| map | low ms (phase 1 → 2) | medium ms | high ms | draw calls / triangles in view (low · medium · high) |
+|---|---|---|---|---|
+| pass | 0.49 → 1.08 | 2.9 → 17.6–19.6 (51–57 fps) | 4.1 → 47–49 (≈ 21 fps) | 92 / 185 k · 164 / 415 k · 203 / 869 k |
+| deck | 0.59 → 0.87–1.06 | 2.4 → 9.1–9.4 | 2.7 → 11.8–12.3 | 37 / 71 k · 47 / 104 k · 59 / 195 k |
+| harbor | 0.44 → 0.78–0.80 | 2.6 → 7.4 | 3.1 → 11.9–12.0 | 48 / 84 k · 61 / 156 k · 60 / 242 k |
+| city | 0.59 → 1.86–1.90 | 3.2 → 17.3–18.1 (55–58 fps) | 3.0 → 17.8–17.9 | 40 / 76 k · 49 / 135 k · 51 / 127 k |
+
+The polish (foliage shading, wet streaks, faceted guardrail, one needle-card tier and one silhouette tip less on medium) is at parity with
+the phase-2 commit on every map and tier (same draw calls; pass medium 441 k → 415 k triangles). Draw calls and triangles are within the
+budgets except the pass: low 185 k (budget 150 k) and medium 415 k at its densest view (400 k). **Open:** phase 2 made the maps 3–6× more
+expensive on medium/high and ≈ 2× on low (still ≈ 1–2 ms); the pass and the city miss "≥ 60 fps on medium" on this class even without
+cars, the pass on high (moon shadow of the forest, 869 k triangles) runs at ≈ 21 fps. Hiding the whole map saves it; per-group toggles (trees,
+terrain, lights, env map) were too noisy on the shared machine to rank – it is fill and shading, not triangles (the triangle cut did not
+move the time). Profile it again on a quiet machine.
+Candidates: cheaper far trees (Lambert-like silhouettes), no shadow casting for the forest cards on high, fewer alpha-to-coverage layers.
+
 ## 11. Realism reference
 
 **Dimensions** (metres): lane 3.5 (city 3.0–3.25), road markings 0.12–0.15 wide (dashes 3 m / gaps 6 m on rural roads), kerb 0.15 high,
@@ -336,7 +357,14 @@ or desaturated colour needs more, see §2/§5) – keep the rest of the sign dar
   taillights except the own car's optional `taillight` source.
 - **Wet roads** reflect the environment map, not the scene: puddles and the wet film show the generic night street and the specular
   highlights of the real lights. For the classic wet-road look add view-dependent reflection streaks (additive quads on the road below
-  each lamp/neon, stretched towards the camera) in the road/fx code; there is no SSR.
+  each lamp/neon, stretched towards the camera) in the road/fx code; there is no SSR. Done: `world/wet-streaks.js` (`WetStreaks`:
+  `reflect(x, z, height, hex, width, strength, { roadY, reach })`, one instanced draw call per map; `keep` keeps the bright part of tall
+  lights in front of the camera) – the city's lamps, signs and shop windows (maps/city-fx.js), the harbour's mast floodlights on the wet
+  yard (medium/high only); `fx/streaks.js` does the cars' lamps, `harbor-water.js` the sea. The pass (damp, 0.14) and the deck (dry with
+  wet patches) have none on purpose.
+- **Foliage cards** (`world/props-trees.js foliageShading`): double-sided cards keep the crown's normal on both faces; seen from below,
+  that normal faces away from the eye, N·V clamps to 0 and the Fresnel term turned the branches overhead into a mirror of the night sky
+  (frost-white). The shader bends the normal towards the eye until N·V ≥ 0.25 and damps the specular – use it for every such card.
 - **Disposal**: car dispose code must skip `isShared()` materials/textures (`disposeMaterial` does); `carPaint` is the car's own, and so
   is an `emissive(…, { map })` sign material (with its texture).
 - **Quality switch in the menu**: the stage switches at once, but a scene keeps what it was built with (the sky, smoke and glows adapt their
@@ -350,3 +378,33 @@ or desaturated colour needs more, see §2/§5) – keep the rest of the sign dar
 - `ctx.random` stays the only randomness for map content (every client builds the same world); texture seeds are fixed per recipe.
 - Low must stay as cheap as today: on low the factories already return Lambert/Phong, the pool is empty, there is no env map –
   don't add per-pixel work that only exists for the look of medium/high without a quality check.
+
+## 13. Real car models (GLB)
+
+The cars with a real model (downloaded CC BY models, prepared by `tools/cars/` – the steps are in `tools/cars/README.md`) are
+`models/cars/<key>.glb`, listed in `data/car-models.json` (measures, wheel centres, lamp mounts, size, a content hash `v`) and credited in
+`data/car-credits.json` (settings → Credits). `car/model-glb.js` does the runtime; `buildCar(view)` (unchanged API) uses it when `view.key`
+has an entry:
+
+- **Low never loads a model** (no download, the procedural car as before). Medium/high: buildCar returns the procedural car at once and
+  swaps the model in when it is loaded – synchronously when it is loaded already (the garage repaints without a flicker);
+  `userData.ready` resolves to `true` then. The model's measures (lamp mounts, profile, beam, shadow, neon) are put on the car at once when
+  the manifest is loaded, so the run's lamps (`fx/carlights.js` reads `lightMounts` in `add()`) and the camera get the real car's.
+  `preloadCarModels(keys)` (model-glb.js) can start the downloads early (the menu, the garage list – not wired yet).
+- **One file per car, loaded once**: geometry, the model's textures and kept materials are shared by every car of that key
+  (`userData.shared`); per car: the paint (`carPaint` in the garage colour, no flakes – the model's UVs are not metric), the tail, brake
+  and reverse lamps (Vehicle drives them as before). `trimCarCache('low')` frees all loaded models.
+- **Materials by role** (the prepared file names them): `paint` → `carPaint`; `glass`, `lens`, `chrome`, `rim` (the garage's rim colour),
+  `metal`, `rubber`, `trim` (gloss black), `plastic`, `caliper` → the factory's (§5; a role material that kept its texture stays the
+  model's); `light_head` 6, `light_drl` 4 (emissive, `lamps` in the manifest overrides), `light_tail` 2.6 / brake 8, `light_brake`
+  (lit only when braking), `light_reverse`; `far` (the far model's vertex colours); `x_*` the model's own (textures kept).
+- **Wheels**: `wheel_fl/fr/rl/rr` hang in the procedural car's pivots (steer, camber, spin – Vehicle unchanged), `caliper_xx` steer
+  without spinning. **LOD**: the file has a far model (≈ 9 k triangles, 4–5 draw calls) behind the same THREE.LOD; the wheels switch
+  3 m later than the body. Neon tubes and the ground glow, glow points and the contact shadow follow the model's measures.
+  Decals and the number are **procedural only** (the livery atlas needs the procedural shells' UVs): a car with a model shows none.
+- **Budgets per car**: file ≤ 3 MB (meshopt geometry, WebP textures), near ≈ 60–90 k triangles (default 80 k), far ≈ 9 k, textures
+  ≤ 1024² (base colour, emissive) and ≤ 512² (normal, ORM), ≈ 20 body + ≈ 12–16 wheel draw calls (merge roles to stay there).
+  Measured with the test car (a 359 k triangle model → 78 k / 9 k, 0.73 MB): +15 draw calls and +30 k triangles per car in view on
+  medium compared with the procedural car; first load ≈ 20–50 ms from the local server (parse + meshopt decode), then free.
+- **Serving**: the master's static files do not know `.glb`; `Web/PlayerApp.cs` serves `models/cars/*.glb` (`model/gltf-binary`, cached
+  for good with `?v=`). The Windows app (MatGame.Shell) and `scripts/serve.mjs` serve them as they are.

@@ -95,7 +95,8 @@ export class Vehicle {
         body.position.y = this.rideHeight + heave + buzz;
 
         // wheels: the fronts steer, all spin (the rears a little faster when they spin up in a drift)
-        const spin = ((s.forward ?? 0) / CAR.wheelRadius) * dt;
+        // a real model (model-glb.js) has its own wheel size
+        const spin = ((s.forward ?? 0) / (this.parts.wheelRadius ?? CAR.wheelRadius)) * dt;
         for (const w of this.parts.wheels) {
             if (w.front) w.pivot.rotation.y = s.steer ?? 0;
             // the right wheels sit turned around: their spin runs the other way in their own frame

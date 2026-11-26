@@ -18,7 +18,7 @@ import { buildRoom, FLOOR, ROOM, STUDIO } from './garage-room.js';
 const TURNTABLE = { radius: 3.3, top: 0.14, speed: 0.16 };
 
 /** The post chain of the garage: a touch less exposure than the street (the softboxes are bright), a soft bloom on the panels. */
-const POST = Object.freeze({ exposure: 1.15, bloom: { strength: 0.5, radius: 0.6, threshold: 0.9 }, vignette: 0.36, grain: 0.03 });
+const POST = Object.freeze({ exposure: 1.15, bloom: { strength: 0.42, radius: 0.6, threshold: 1.25 }, vignette: 0.36, grain: 0.03 });
 
 /** The camera: a slow, wide sway around the front quarter of the car (long lens, eye a little below standing height). */
 const CAMERA = { fov: 34, distance: 9.8, height: 1.6, look: 0.62 };
@@ -224,7 +224,7 @@ function addLights(scene, quality) {
         scene.add(light, light.target);
         return light;
     };
-    const key = spot(STUDIO.key, kelvinHex(5600), pbr ? 170 : 170, 16, 0.62, 0.8);
+    const key = spot(STUDIO.key, kelvinHex(5600), pbr ? 105 : 170, 16, 0.62, 0.8);
     if (quality === 'high') {
         key.castShadow = true;
         key.shadow.mapSize.set(1024, 1024);

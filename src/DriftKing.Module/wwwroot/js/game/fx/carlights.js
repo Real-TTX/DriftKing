@@ -12,6 +12,11 @@ import { lightRecord } from './lighting.js';
 const HEAD = LIGHT_PRESETS.headlight;
 /** Pool lights to keep for the other cars' headlights (buildWorld lightReserve): the nearest few are lit. */
 export const HEADLIGHT_RESERVE = 3;
+/**
+ * The headlights dim from full (the nearest car ahead farther than far, m) to off (closer than near). The mirror image of the lamp in that
+ * car's clear coat grows with intensity / distance⁴ (the light falls off, the highlight shrinks on screen): this curve keeps it a glint.
+ */
+const LOW_BEAM = Object.freeze({ near: 5, far: 25 });
 
 const head = new THREE.Color(HEAD.color);
 const centre = { x: 0, y: 0, z: 0 };
@@ -132,7 +137,11 @@ export class CarLights {
         }
     }
 
-    /** 1, or less when another car is right in front of these lamps (the cone of a SpotLight has no cut-off line: it would flood that car). */
+    /**
+     * 1, or less when another car is in front of these lamps. The cone of a SpotLight has no cut-off line: it would flood that car, and its
+     * clear coat would mirror the lamp as one burning point (the bloom makes a ball of it on the rear of the car ahead – right in the chase
+     * camera's view when a bot follows). A real low beam puts that car's rear above the cut-off; the road between keeps the beam decal.
+     */
     lowBeam(car, at, forward) {
         let nearest = Infinity;
         for (const other of this.cars) {
@@ -145,9 +154,9 @@ export class CarLights {
             // inside the cone (with the other car's half width)
             if (Math.abs(dx * forward.z - dz * forward.x) < along * 0.5 + 1.6) nearest = along;
         }
-        if (nearest > 16) return 1;
-        const t = Math.max(0, Math.min(1, (nearest - 2.5) / 13.5));
-        return 0.04 + 0.96 * t * t;
+        if (nearest > LOW_BEAM.far) return 1;
+        const t = Math.max(0, Math.min(1, (nearest - LOW_BEAM.near) / (LOW_BEAM.far - LOW_BEAM.near)));
+        return t * t;
     }
 
     dispose() {

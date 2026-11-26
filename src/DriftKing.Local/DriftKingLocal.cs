@@ -357,12 +357,12 @@ public sealed class DriftKingLocal : ILocalGame
     {
         var level = Level();
         var owned = _profile.Garage.Select(g => g.CarId).ToHashSet();
-        return new CatalogView(_cars.Where(c => c.IsEnabled).Select(c => Views.Dealer(c, owned.Contains(c.Id), level)).ToList(),
+        return new CatalogView(_cars.Where(c => c.IsEnabled).OrderBy(c => c.SortOrder).Select(c => Views.Dealer(c, owned.Contains(c.Id), level)).ToList(),
             _maps.Where(m => m.IsEnabled).Select(m => Views.Map(m, level)).ToList());
     }
 
     private GarageView Garage()
-        => new(_profile.Garage.Select(g => Views.GarageCar(g, CarOf(g))).OrderBy(g => _cars.FindIndex(c => c.Id == g.Car.CarId)).ToList(),
+        => new(_profile.Garage.OrderBy(g => CarOf(g).SortOrder).ThenBy(g => g.Id).Select(g => Views.GarageCar(g, CarOf(g))).ToList(),
             _profile.Player.SelectedGarageCarId, _profile.Player.Money);
 
     private GarageView Buy(long carId)

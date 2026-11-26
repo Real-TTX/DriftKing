@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, rng } from '../../render/kit.js';
 import { buildTrees } from '../props.js';
+import { foliageShading } from '../props-trees.js';
 import { TERRAIN, ownSurface } from './pass-layout.js';
 
 /** Patches of the forest (each one buildTrees call: frustum culling per patch). */
@@ -147,11 +148,8 @@ function buildUndergrowth(ctx, layout, cleared) {
     }
     const set = ctx.textures.foliage({ kind: 'leaves' });
     const material = ownSurface(ctx, set, { color: 0x86966a, side: THREE.DoubleSide, alphaTest: 0.45, alphaToCoverage: quality !== 'low', normal: 0.5 });
-    material.onBeforeCompile = shader => {
-        // keep the clump's normal on both sides (three would flip it on back faces and light half the leaves from inside)
-        shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'));
-    };
-    material.customProgramCacheKey = () => 'pass-undergrowth';
+    // keep the clump's normal on both sides (three would flip it on back faces and light half the leaves from inside), no sky sheen from behind
+    foliageShading(material, 'pass-undergrowth');
     const mesh = new THREE.InstancedMesh(geometry, material, spots.length);
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();

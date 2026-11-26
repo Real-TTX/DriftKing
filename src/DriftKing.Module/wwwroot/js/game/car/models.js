@@ -1,8 +1,10 @@
-// DriftKing · car/models.js – the cars: six invented street-drift bodies built from sculpted shells (model-shell.js, model-bodies.js) with
+// DriftKing · car/models.js – the cars: six street-drift bodies built from sculpted shells (model-shell.js, model-bodies.js) with
 // detailed parts (model-parts.js), PBR materials and a livery atlas (model-materials.js, model-livery.js), wheels with tyres, rims and
 // brakes (model-wheels.js). A near model (≈ 15 draw calls: one per material) and a far model (4 draw calls) switch by distance (THREE.LOD).
 // Geometry is shared by all cars of a body (per quality and tuning variant); paint, livery and the changing lamps belong to each car.
 // The car faces +z, the ground is y = 0; the body rolls and pitches in userData.body, the wheels steer and spin.
+// A car key with a real model (data/car-models.json, model-glb.js) gets it on medium/high: buildCar returns the procedural car at once and
+// swaps the model in when it is loaded (at once when it is loaded already); userData.ready resolves to true then (false: procedural).
 
 import * as THREE from 'three';
 import { settings } from '../settings.js';
@@ -12,6 +14,7 @@ import { carMaterials, paintMaterial, reverseMaterial, tailMaterial } from './mo
 import { liveryTexture } from './model-livery.js';
 import { Buckets, buildParts } from './model-parts.js';
 import { wheelGeometries } from './model-wheels.js';
+import { applyMeasures, carManifestReady, carModelEntry, loadCarModel, loadedCarModel, releaseCarModels, swapInModel } from './model-glb.js';
 
 /** Measures shared by all bodies (metres). */
 export const CAR = { wheelbase: 2.5, track: 1.5, wheelRadius: 0.33, width: 1.78 };
@@ -101,7 +104,7 @@ function farGeometry(design, quality) {
  * @param {object} view the CarView
  * @param {{ quality?: string }} [options] the picture quality (default: the settings)
  * @returns {THREE.Group} with userData { body, wheels: [{ pivot, spin, side, front }], headGlow, tailGlow, beam, neon, profile, lightMounts,
- *          tailMaterial, lamps: { tail, reverse }, syncWheels(), dispose() }
+ *          tailMaterial, lamps: { tail, reverse }, lod, ready (Promise<boolean>: the real model is in), syncWheels(), dispose() }
  */
 export function buildCar(view, { quality = settings.get().quality } = {}) {
     const design = designOf(view.body);
@@ -110,7 +113,9 @@ export function buildCar(view, { quality = settings.get().quality } = {}) {
     const far = farGeometry(design, quality);
     const shared = carMaterials(quality);
     const paintColour = new THREE.Color(view.paint ?? '#f4f2ff');
-    const livery = liveryTexture(view, design, quality);
+    // a model that is loaded already replaces the procedural body in this call: no livery to paint for it
+    const modelNow = quality !== 'low' && view.key ? loadedCarModel(view.key) : null;
+    const livery = modelNow ? null : liveryTexture(view, design, quality);
     const paint = paintMaterial(quality, livery, paintColour);
     const tail = tailMaterial();
     const reverse = reverseMaterial();
@@ -219,9 +224,11 @@ export function buildCar(view, { quality = settings.get().quality } = {}) {
 
     // neon: tubes under the sills (near model) and their light on the ground
     let neon = null;
+    let neonPlane = null;
     if (view.neon) {
         neon = new THREE.Group();
         const plane = new THREE.Mesh(neonGeometry(), shared.neonGround(view.neon));
+        neonPlane = plane;
         plane.position.y = 0.035;
         plane.scale.set(design.halfWidth * 2 + 2.6, 1, design.nose - design.tail + 2.4);
         neon.add(plane);
@@ -263,6 +270,7 @@ export function buildCar(view, { quality = settings.get().quality } = {}) {
         /** Copies the wheels' pivot/spin transforms into the instanced wheels (Vehicle.update calls it every frame). */
         syncWheels,
         dispose() {
+            car.userData.disposed = true;
             car.traverse(o => {
                 if (o.geometry && !isShared(o.geometry)) o.geometry.dispose();
                 const list = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
@@ -272,7 +280,34 @@ export function buildCar(view, { quality = settings.get().quality } = {}) {
             });
         },
     };
+    car.userData.ready = attachModel(car, view, quality, { bodyLod, nearBody, farBody, wheelLod, shadow, neonPlane, variant, lodDistance });
     return car;
+}
+
+/**
+ * The real model of the car's key (medium/high): swapped in now when it is loaded, else when it arrives. The model's measures (lamp mounts,
+ * profile) are put on the car at once when the list of models is loaded, so the run's lamps and the camera read the real car's.
+ * @returns {Promise<boolean>} true when the model is in
+ */
+function attachModel(car, view, quality, ctx) {
+    if (quality === 'low' || !view.key) return Promise.resolve(false);
+    let restore = null;
+    const swap = template => {
+        if (car.userData.disposed) return false;
+        restore ??= applyMeasures(car, template.entry, ctx);
+        swapInModel(car, template, view, quality, ctx);
+        return true;
+    };
+    const now = loadedCarModel(view.key);
+    if (now) return Promise.resolve(swap(now));
+    const entry = carModelEntry(view.key);
+    if (carManifestReady() && !entry) return Promise.resolve(false);
+    if (entry) restore = applyMeasures(car, entry, ctx);
+    return loadCarModel(view.key).then(swap, error => {
+        if (entry) console.warn(`DriftKing: the model of "${view.key}" could not be loaded`, error);
+        if (restore && !car.userData.disposed) restore();
+        return false;
+    });
 }
 
 /** Glow sprites on the lamps (the halo on low, a soft extra on medium/high). */
@@ -307,8 +342,9 @@ function shadowGeometry() {
     return shadowShared;
 }
 
-/** Drops the cached geometry of other qualities (call after a quality switch, when no car of the old quality is shown any more). */
+/** Drops the cached geometry of other qualities (call after a quality switch, when no car of the old quality is shown any more); low also frees the loaded real models. */
 export function trimCarCache(quality) {
+    if (quality === 'low') releaseCarModels();
     for (const cache of [nearCache, farCache]) {
         for (const [key, entry] of cache) {
             if (key.split('|')[1] === quality) continue;

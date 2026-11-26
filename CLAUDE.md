@@ -4,9 +4,10 @@ Guidance for working in this repository. Keep it in sync with the code.
 
 ## What DriftKing is
 
-A 3D night street-drift game in the browser, in the spirit of Japanese drift culture (touge, parking decks, harbour, neon city) – **the names, maps,
-cars and art are our own: never copy a film, a game, real car brands or characters**. Realistic night look on medium/high (PBR materials, reflections, bloom, real lights, detailed cars and maps – docs/RENDERING.md); low quality stays as cheap as the old low-poly look.
-Modes free ride / score attack / race, four maps (`pass`, `deck`, `harbor`, `city`), a garage (eight cars, tuning, paint, neon, decals), competitions
+A 3D night street-drift game in the browser, in the spirit of Japanese drift culture (touge, parking decks, harbour, neon city) – **real cars and brands
+are allowed (the owner holds the licences); maps, art and names otherwise are our own; never copy a film, a game, an anime or their characters, cars or
+liveries (no replicas)**. 3D models of real cars only with a licence that allows it (CC-BY/CC0), credited in the game (`data/car-credits.json`, the GLB pipeline). Realistic night look on medium/high (PBR materials, reflections, bloom, real lights, detailed cars and maps – docs/RENDERING.md); low quality stays as cheap as the old low-poly look.
+Modes free ride / score attack / race, four maps (`pass`, `deck`, `harbor`, `city`), a garage (thirteen real cars, tuning, paint, neon, decals), competitions
 with medals (admin-managed), bots, online rooms, a rich HUD (speed, rpm/gear, drift angle, pedal positions, steering, chain/multiplier, minimap).
 
 DriftKing is a **plugin of MatGame** (`../MatGame`: portal, accounts/guests, device sign-in, `/Admin`, discovery for the apps; read `../MatGame/CLAUDE.md`).
@@ -61,7 +62,7 @@ src/DriftKing.Module    DriftKingModule (IGameModule), Data/AppDbContext + Migra
 src/DriftKing.Module/wwwroot
   data/maps.json        the four courses (control points, width, lengthM, defaultLaps) – shared with the server
   js/game               main (entry), api (SDK glue), net (a run ↔ the room), nav, menu (shell, home, sign-in, profile, settings, pause, results),
-                        menu-play (solo, competitions, online rooms), menu-garage, ui, settings, catalog (fixed words + specOf mirror),
+                        menu-play (solo, competitions, online rooms), menu-garage, ui, settings, catalog (fixed words, CARS + specOf mirrors),
                         render/ stage (renderer, frame loop, tone mapping per quality), post (HDR chain: MSAA, bloom, finish pass), device (the renderer
                         for GPU work outside a frame), environment (PMREM reflection maps night/dusk/garage), textures (procedural PBR texture recipes),
                         materials (the material factory per quality), lights (LightRig: fixed pool of real lights, presets), kit (merging, glows, pools,
@@ -83,4 +84,8 @@ docs/RENDERING.md       the rendering contract: quality tiers, post, reflections
 - Scoring (js/game/run/drift.js): drifting at ≥ 12° and ≥ 30 km/h, rate = km/h × (0.5 + angle/45) × chain multiplier (≤ 5), ×1.25 near a wall, ×1.5 tandem,
   capped at 7 500 points/s; the server cuts above `MaxPointsPerSecond` × seconds (setting, default 8 000).
 - Map keys (`pass`, `deck`, `harbor`, `city`) and body keys (`coupe`, `hatch`, `sedan`, `fastback`, `wide`, `muscle`) are contracts (DB, catalog.js, the 3D code): never rename one.
+- Car keys are contracts too and the key of the 3D model (`CarView.key`; a car without a model of its own falls back to its body): `kaze` S13 (starter), `hotaru` AE86,
+  `ronin` JZX100, `kitsune` FD3S, `yurei` S15, `raijin` R34 (AWD), `oni` Mustang GT, `tora` Supra A80, `s14a` 200SX S14a, `g81` M3 Touring (AWD), `e46` M3 E46,
+  `z33` 350Z, `gr86` GR86. `SeedContent.Cars` keeps its order (the offline game numbers the cars by their place): new cars go to the end, the menus sort
+  by `SortOrder`; `catalog.js CARS` mirrors the list (a test). Renamed seed texts: `SeedContent.FormerCars` + `Refresh` (only rows that still carry the old text).
 - Scale: 1 unit = 1 metre.

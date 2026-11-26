@@ -1,4 +1,4 @@
-// The fixed words of the game in the browser: bodies, drives, parts, maps, modes – and specOf, the mirror of the server's Tuning.SpecOf
+// The fixed words of the game in the browser: bodies, drives, the seeded cars, parts, maps, modes – and specOf, the mirror of the server's Tuning.SpecOf
 // (DriftKing.Core/Business/Rules.cs). The server always sends the spec of a car with it (CarView.spec); specOf is only for the previews
 // (dev pages, the garage's "after the upgrade" numbers). Change both together.
 
@@ -15,6 +15,27 @@ export const BODIES = Object.freeze({
 export const DRIVES = Object.freeze({
     RWD: 'Heckantrieb',
     AWD: 'Allrad',
+});
+
+/**
+ * The seeded cars (DriftKing.Core/Business/SeedContent.cs Cars, held to it by a test). The key of a car is also the key of its 3D model
+ * (CarView.key / DealerCarView.key); the game itself takes the cars from the server (an administrator may add or change some) – this list is
+ * for the previews (dev pages) and as the known model keys. Never rename a key.
+ */
+export const CARS = Object.freeze({
+    kaze: { name: 'Nissan Silvia S13', body: 'coupe', drive: 'RWD', power: 3, grip: 4, weight: 4, steering: 6 },
+    hotaru: { name: 'Toyota Sprinter Trueno AE86', body: 'hatch', drive: 'RWD', power: 3, grip: 5, weight: 2, steering: 6 },
+    ronin: { name: 'Toyota Chaser JZX100', body: 'sedan', drive: 'RWD', power: 5, grip: 5, weight: 6, steering: 6 },
+    kitsune: { name: 'Mazda RX-7 FD3S', body: 'fastback', drive: 'RWD', power: 6, grip: 6, weight: 5, steering: 7 },
+    yurei: { name: 'Nissan Silvia S15 Spec-R', body: 'coupe', drive: 'RWD', power: 7, grip: 7, weight: 4, steering: 8 },
+    raijin: { name: 'Nissan Skyline GT-R R34', body: 'wide', drive: 'AWD', power: 8, grip: 8, weight: 7, steering: 5 },
+    oni: { name: 'Ford Mustang GT', body: 'muscle', drive: 'RWD', power: 9, grip: 5, weight: 8, steering: 6 },
+    tora: { name: 'Toyota Supra A80 Widebody', body: 'wide', drive: 'RWD', power: 10, grip: 7, weight: 6, steering: 9 },
+    s14a: { name: 'Nissan 200SX S14a', body: 'coupe', drive: 'RWD', power: 5, grip: 6, weight: 4, steering: 7 },
+    g81: { name: 'BMW M3 Competition Touring G81', body: 'sedan', drive: 'AWD', power: 9, grip: 9, weight: 9, steering: 5 },
+    e46: { name: 'BMW M3 E46', body: 'coupe', drive: 'RWD', power: 7, grip: 6, weight: 7, steering: 7 },
+    z33: { name: 'Nissan 350Z', body: 'fastback', drive: 'RWD', power: 6, grip: 7, weight: 6, steering: 7 },
+    gr86: { name: 'Toyota GR86', body: 'coupe', drive: 'RWD', power: 4, grip: 6, weight: 4, steering: 6 },
 });
 
 /** The tuning parts, levels 0..MAX_LEVEL. */

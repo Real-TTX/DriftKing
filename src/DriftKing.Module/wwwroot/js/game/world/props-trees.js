@@ -194,8 +194,36 @@ function cardGeometry(tiers, perTier, bent = true) {
     return g;
 }
 
-// both sides of a card keep the normal of the crown (out and up): three flips it on back faces, which would light half the cards from inside
+// both sides of a card keep the normal of the crown (out and up): three flips it on back faces, which would light half the cards from inside.
+// Seen from below or from inside the crown that normal faces away from the eye: the BRDF clamps N·V to 0, the Fresnel term goes to 1 and the
+// card mirrors the bright night sky of the reflection map (and the diffuse share drops to nothing) – the branches overhead turned frost-white.
+// So the normal is bent towards the eye just enough that N·V stays ≥ ~0.25: seen from below it then leans down (a darker underside, as it
+// should be), seen from above nothing changes; the specular sheen of needles and leaves is damped as well (they are dull).
 const FOLIAGE_NORMAL = THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0');
+const FOLIAGE_BEND = /* glsl */ `#include <normal_fragment_maps>
+    {
+        vec3 foliageEye = normalize(vViewPosition);
+        normal = normalize(normal + foliageEye * max(0.0, 0.25 - dot(normal, foliageEye)));
+    }`;
+const FOLIAGE_LIGHT = /* glsl */ `#include <lights_fragment_end>
+    reflectedLight.directSpecular *= 0.6;
+    reflectedLight.indirectSpecular *= 0.5;`;
+
+/**
+ * Lights alpha-cut foliage cards (double sided, one normal for both sides) like foliage: the crown's normal on both faces, no sky mirror on
+ * the faces seen from behind. For the MeshStandardMaterials of trees and undergrowth (medium/high; low has no specular to fix).
+ */
+export function foliageShading(material, key) {
+    if (!material.isMeshStandardMaterial) return material;
+    material.onBeforeCompile = shader => {
+        shader.fragmentShader = shader.fragmentShader
+            .replace('#include <normal_fragment_begin>', FOLIAGE_NORMAL)
+            .replace('#include <normal_fragment_maps>', FOLIAGE_BEND)
+            .replace('#include <lights_fragment_end>', FOLIAGE_LIGHT);
+    };
+    material.customProgramCacheKey = () => key;
+    return material;
+}
 
 /**
  * The needle cards' material (owned by the forest; its textures are the factory's, shared): the foliage texture set, alpha cut-out with
@@ -216,11 +244,7 @@ function needleMaterial(mats, colour) {
         alphaToCoverage: true,
     });
     m.normalScale.set(0.5, 0.5);
-    m.onBeforeCompile = shader => {
-        shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', FOLIAGE_NORMAL);
-    };
-    m.customProgramCacheKey = () => 'driftking-needles';
-    return m;
+    return foliageShading(m, 'driftking-needles');
 }
 
 /**
@@ -267,12 +291,13 @@ export function buildTrees(root, spots, random, options = {}) {
     group.name = 'trees';
     // geometries and materials are shared by all calls into the same world (maps build their forest patch by patch) and by the grid cells
     const kit = perWorld(root, `trees:${mats.quality}`, () => ({
-        shade: ownMaterial(mats, { vertexColors: true, roughness: 0.88, map: needleDetailMap() }),
-        farGeometry: mergeGeometries([paint(trunkGeometry(3.2, pbr ? 6 : 5, 0.22, 0.1), 0x4a3c30), tierGeometry(3, high ? 7 : pbr ? 6 : 5, 1)]),
+        shade: foliageShading(ownMaterial(mats, { vertexColors: true, roughness: 0.88, map: needleDetailMap() }), 'driftking-tree-shade'),
+        farGeometry: mergeGeometries([paint(trunkGeometry(3.2, pbr ? 6 : 5, 0.22, 0.1), 0x4a3c30), tierGeometry(3, high ? 7 : 5, 1)]),
         near: pbr ? {
             trunk: trunkGeometry(CROWN_TOP * 0.92, high ? 9 : 7),
             core: tierGeometry(high ? 4 : 3, 6, 0.52, { underside: 'none', palette: CORE_PALETTE }),
-            cards: high ? cardGeometry(8, 6) : cardGeometry(6, 5),
+            // medium: one tier less than it had (the pass stayed above the 400 k triangles in view of RENDERING.md §10)
+            cards: high ? cardGeometry(8, 6) : cardGeometry(5, 5),
             bark: mats.bark({ color: 0xc0a088 }),
             needles: needleMaterial(mats, 0xc4ceb8),
         } : null,

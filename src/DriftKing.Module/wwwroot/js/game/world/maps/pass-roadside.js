@@ -378,35 +378,40 @@ function buildGuardrails(ctx, layout) {
     addInstances(root, new THREE.CylinderGeometry(0.05, 0.05, 0.014, 10, 1).rotateX(Math.PI / 2), retroMaterial(0xf4f6ff, 5, { base: 0.12, near: 15, far: 95 }), reflectors);
 }
 
-/** Appends the W-beam rows ({ s, out, drop }) to the buffers: the profile swept along the side, normals across the waves. */
+/**
+ * Appends the W-beam rows ({ s, out, drop }) to the buffers: the profile swept along the side, one flat facet per profile segment (its own
+ * normal across the wave) – the pressed steel reads as bands: the upper slopes catch the sky, the lower ones fall dark, the flats face the road.
+ */
 function railStrip(course, rows, sign, positions, normals, uvs, index) {
     const base = positions.length / 3;
-    const count = PROFILE.length;
+    const segments = PROFILE.length - 1;
+    const perRow = segments * 2;
     const p = {};
     for (let r = 0; r < rows.length; r++) {
         const { s, out, drop } = rows[r];
         course.at(s, p);
         const lx = p.tz * sign;
         const lz = -p.tx * sign;
-        for (let c = 0; c < count; c++) {
-            const [o, h] = PROFILE[c];
-            const d = EDGE.rail + o + out;
-            positions.push(p.x + lx * d, p.y + h - drop, p.z + lz * d);
-            // the normal of the wave: towards the road, tilted by the profile's slope
-            const prev = PROFILE[Math.max(0, c - 1)];
-            const next = PROFILE[Math.min(count - 1, c + 1)];
-            const dh = next[1] - prev[1];
-            const dout = next[0] - prev[0];
+        for (let c = 0; c < segments; c++) {
+            const [o0, h0] = PROFILE[c];
+            const [o1, h1] = PROFILE[c + 1];
+            const dh = h1 - h0;
+            const dout = o1 - o0;
             const len = Math.hypot(dh, dout) || 1;
-            normals.push(lx * (-dh / len), dout / len, lz * (-dh / len));
-            uvs.push(s, h);
+            for (const [o, h] of [[o0, h0], [o1, h1]]) {
+                const d = EDGE.rail + o + out;
+                positions.push(p.x + lx * d, p.y + h - drop, p.z + lz * d);
+                normals.push(lx * (-dh / len), dout / len, lz * (-dh / len));
+                uvs.push(s, h);
+            }
         }
         if (r > 0) {
-            const a = base + (r - 1) * count;
-            const b = base + r * count;
-            for (let c = 0; c < count - 1; c++) {
-                if (sign > 0) index.push(a + c, b + c, a + c + 1, a + c + 1, b + c, b + c + 1);
-                else index.push(a + c, a + c + 1, b + c, a + c + 1, b + c + 1, b + c);
+            const a = base + (r - 1) * perRow;
+            const b = base + r * perRow;
+            for (let c = 0; c < segments; c++) {
+                const i = c * 2;
+                if (sign > 0) index.push(a + i, b + i, a + i + 1, a + i + 1, b + i, b + i + 1);
+                else index.push(a + i, a + i + 1, b + i, a + i + 1, b + i + 1, b + i);
             }
         }
     }

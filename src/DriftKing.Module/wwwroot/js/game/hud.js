@@ -34,6 +34,8 @@ export function createHud(host, { mode, laps, durationS, goals, course, mapName 
     const steer = $('steer');
     const chain = $('chain');
     const popups = $('popups');
+    let popupAt = -Infinity;
+    let popupRow = 0;
     const standings = $('standings');
     const goalFill = $('goal-fill');
     let lastStandings = '';
@@ -115,6 +117,11 @@ export function createHud(host, { mode, laps, durationS, goals, course, mapName 
             const el = document.createElement('div');
             el.className = `hud-popup hud-popup--${label[1]}`;
             el.textContent = label[0];
+            // popups that come together (wall and tandem in the same moment) stack downwards instead of on top of each other
+            const now = performance.now();
+            popupRow = now - popupAt < 600 ? (popupRow + 1) % 3 : 0;
+            popupAt = now;
+            if (popupRow) el.style.top = `${popupRow * 32}px`;
             el.addEventListener('animationend', () => el.remove());
             popups.appendChild(el);
             while (popups.children.length > 4) popups.firstChild.remove();
@@ -193,7 +200,7 @@ function template(mode, goals, mapName) {
             <path class="hud-angle__zone hud-angle__zone--over" d="${arc(-90, -70)} ${arc(70, 90)}" />
             <g class="hud-angle__ticks">${ticks.join('')}</g>
             <g data-hud="max" class="hud-angle__max"><path d="M 120 10 l -6 -9 h 12 z" /></g>
-            <g data-hud="needle" class="hud-angle__needle"><path d="M 117 120 L 120 26 L 123 120 Z" /><circle cx="120" cy="120" r="7" /></g>
+            <g data-hud="needle" class="hud-angle__needle"><path d="M 117.5 92 L 120 26 L 122.5 92 Z" /><circle cx="120" cy="92" r="3" /></g>
         </svg>
         <div class="hud-angle__value"><b data-hud="angle">0°</b><span>DRIFTWINKEL</span></div>
     </div>

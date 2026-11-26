@@ -48,6 +48,28 @@ public sealed class RulesTests
     }
 
     [Fact]
+    public void Seeded_cars_match_the_javascript_mirror()
+    {
+        // js/game/catalog.js CARS: one line per car with the same name, body, drive and values
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "DriftKing.slnx")))
+        {
+            root = root.Parent;
+        }
+
+        Assert.NotNull(root);
+        var catalog = File.ReadAllText(Path.Combine(root.FullName, "src", "DriftKing.Module", "wwwroot", "js", "game", "catalog.js"));
+        foreach (var car in SeedContent.Cars())
+        {
+            var line = $"    {car.Key}: {{ name: '{car.Name}', body: '{car.Body}', drive: '{car.Drive}', power: {car.Power}, grip: {car.Grip}, "
+                + $"weight: {car.Weight}, steering: {car.Steering} }},";
+            Assert.Contains(line, catalog);
+        }
+
+        Assert.Equal(SeedContent.Cars().Count, System.Text.RegularExpressions.Regex.Matches(catalog, @"^    \w+: \{ name: '[^']*', body: '",System.Text.RegularExpressions.RegexOptions.Multiline).Count);
+    }
+
+    [Fact]
     public void Buying_needs_money_level_and_a_free_slot()
     {
         var cars = SeedContent.Cars().Select((c, i) => { c.Id = i + 1; return c; }).ToList();
@@ -135,6 +157,69 @@ public sealed class RulesTests
             Assert.True(MapCatalog.Exists(map.Key), $"data/maps.json has no map '{map.Key}'");
             Assert.True(MapCatalog.LengthOf(map.Key) > 300);
         }
+    }
+
+    [Fact]
+    public void Seeded_cars_keep_their_keys_and_order_and_fit_the_scales()
+    {
+        var cars = SeedContent.Cars();
+        // the offline game numbers the cars by their place: the first eight stay where they are, new ones come after them
+        Assert.Equal(["kaze", "hotaru", "ronin", "kitsune", "yurei", "raijin", "oni", "tora", "s14a", "g81", "e46", "z33", "gr86"], cars.Select(c => c.Key));
+        Assert.Equal(cars.Count, cars.Select(c => c.SortOrder).Distinct().Count());
+        Assert.Single(cars, c => c.Price == 0);
+        Assert.Equal("kaze", Starter.Key);
+        foreach (var car in cars)
+        {
+            Assert.Contains(car.Body, Looks.Bodies);
+            Assert.Contains(car.DefaultPaint, Looks.Paints);
+            Assert.All(new[] { car.Power, car.Grip, car.Weight, car.Steering }, value => Assert.InRange(value, 1, 10));
+            Assert.InRange(car.Name.Length, 1, 60);
+            Assert.InRange(car.Description.Length, 1, 400);
+            Assert.InRange(car.UnlockLevel, 1, Progression.MaxLevel);
+        }
+
+        // the dealer's order: the price rises with the sort order, the S14a sits between the S13 and the S15
+        var sorted = cars.OrderBy(c => c.SortOrder).ToList();
+        Assert.Equal(sorted.Select(c => c.Price).Order(), sorted.Select(c => c.Price));
+        Assert.Equal(sorted.Select(c => c.UnlockLevel).Order(), sorted.Select(c => c.UnlockLevel));
+        var order = sorted.Select(c => c.Key).ToList();
+        Assert.True(order.IndexOf("kaze") < order.IndexOf("s14a") && order.IndexOf("s14a") < order.IndexOf("yurei"));
+        Assert.Equal(CarDrive.AWD, cars.First(c => c.Key == "g81").Drive);
+        Assert.All(new[] { "s14a", "e46", "z33", "gr86" }, key => Assert.Equal(CarDrive.RWD, cars.First(c => c.Key == key).Drive));
+    }
+
+    [Fact]
+    public void Refresh_renames_the_former_seeded_cars_but_keeps_an_admins_values()
+    {
+        var untouched = new Car { Key = "kaze", Name = "Kaze 2000", Description = "Leichtes Coupé mit Heckantrieb – gutmütig, ehrlich, der Klassiker zum Driften-Lernen.",
+            DefaultPaint = "#f4f2ff", Power = 3, Price = 0 };
+        Assert.True(SeedContent.Refresh(untouched));
+        Assert.Equal("Nissan Silvia S13", untouched.Name);
+        Assert.StartsWith("Der Klassiker", untouched.Description);
+        Assert.Equal(3, untouched.Power);
+        Assert.False(SeedContent.Refresh(untouched));
+
+        var edited = new Car { Key = "kitsune", Name = "Mein Fuchs", Description = "Spitze Schnauze, flinkes Heck: schnell umgesetzt, schnell gefangen.",
+            DefaultPaint = "#ff7a1a", Price = 1 };
+        Assert.True(SeedContent.Refresh(edited));
+        Assert.Equal("Mein Fuchs", edited.Name);
+        Assert.StartsWith("Wankelmotor", edited.Description);
+        Assert.Equal("#ff4040", edited.DefaultPaint);
+        Assert.Equal(1, edited.Price);
+
+        Assert.False(SeedContent.Refresh(new Car { Key = "s14a", Name = "Irgendwas" }));
+        Assert.False(SeedContent.Refresh(new Car { Key = "custom", Name = "Kaze 2000" }));
+    }
+
+    [Fact]
+    public void Bots_drive_every_class_of_the_catalogue()
+    {
+        var cars = SeedContent.Cars().Select((c, i) => { c.Id = i + 1; return c; }).ToList();
+        var top = Enumerable.Range(0, 40).Select(seat => GarageRules.BotCar(cars, seat, 10, 7).Key).ToHashSet();
+        Assert.Contains("tora", top);
+        Assert.DoesNotContain("kaze", top);
+        var low = Enumerable.Range(0, 40).Select(seat => GarageRules.BotCar(cars, seat, 1, 7).Key).ToHashSet();
+        Assert.Subset(new HashSet<string> { "kaze", "hotaru" }, low);
     }
 
     [Fact]

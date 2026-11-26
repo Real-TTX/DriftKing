@@ -18,6 +18,7 @@ import { buildShip } from './harbor-ship.js';
 import { buildCranes } from './harbor-cranes.js';
 import { buildLand } from './harbor-land.js';
 import { harborEnvironment } from './harbor-sky.js';
+import { WetStreaks } from '../wet-streaks.js';
 
 const { minX: MIN_X, maxX: MAX_X, minZ: MIN_Z, quayZ: QUAY_Z, waterY: WATER_Y } = HARBOR;
 const CONTAINER = { l: 12.2, w: 2.44, h: 2.6 };
@@ -34,7 +35,9 @@ export function build(ctx) {
     const decals = new Decals(quality);
     const yard = new ContainerYard(ctx, decals);
     const streaks = new WaterStreaks({ waterY: WATER_Y, minZ: QUAY_Z + 0.8, fogFar: ctx.palette.fogFar * 1.3 });
-    const parts = { batch, decals, yard, streaks };
+    // the masts' sodium light streaking across the wet yard towards the camera (medium/high: low keeps its dry-looking yard and pays nothing)
+    const wet = new WetStreaks(ctx, { roadY: 0.02, lowMin: Infinity, far: [70, 125], keep: 7 });
+    const parts = { batch, decals, yard, streaks, wet };
 
     buildCones(root, coneSpots(course, 0.6), { lights: ctx.lights, materials: ctx.materials });
     buildStartLine(root, course, glows, { colour: 0xffb020, lights: ctx.lights, materials: ctx.materials });
@@ -53,6 +56,7 @@ export function build(ctx) {
     yard.build(root);
     decals.build(root);
     streaks.build(root);
+    wet.build(root);
     const water = buildWater(root, quality, { x: 0, y: WATER_Y, z: QUAY_Z + 600, w: 3000, d: 1200, palette: ctx.palette });
     // medium/high: the harbour's own reflection map (open sky, masts, cranes) instead of the generic street
     if (ctx.envMap) {
@@ -64,6 +68,7 @@ export function build(ctx) {
         update(dt) {
             water.update(dt);
             streaks.update(dt);
+            wet.update(dt);
         },
     };
 }
@@ -343,7 +348,7 @@ function chainLinkMaterial(quality) {
  * ring of six sodium floodlights – one real pool light per mast (LIGHT_PRESETS.mast), glows and a light pool below.
  * A mast whose spot lies inside a container block stands at the block's edge instead (with its own collider; the old one is covered by the block).
  */
-function buildMasts(ctx, free, filled, { batch, decals, streaks }) {
+function buildMasts(ctx, free, filled, { batch, decals, streaks, wet }) {
     const { root, colliders, glows, pools, materials, quality, lights } = ctx;
     const p = harborPalette(materials);
     const { concrete, zinc } = p;
@@ -393,6 +398,7 @@ function buildMasts(ctx, free, filled, { batch, decals, streaks }) {
             pools.add(x, 0, z, 26, 0xffa040, pbr ? 0.26 : 0.6);
             // the foundation sits in a hatched no-parking square
             decals.ground('hatch', x, z, 0, 2.6, 2.6, 0xe0a624, { lift: 0.017 });
+            wet.reflect(x, z, 23.4, 0xffa040, 2.6, 0.85, { reach: 1.8 });
             if (z > QUAY_Z - 30) streaks.add(x, 23.5, z, 0xffa040, { width: 1.4, length: 1.2, strength: 0.6 });
         }
     }

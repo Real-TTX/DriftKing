@@ -33,6 +33,27 @@ public sealed class LocalGameTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_catalogue_has_all_cars_with_stable_ids()
+    {
+        var cars = (await GetAsync("/catalog")).GetProperty("cars").EnumerateArray().ToList();
+        Assert.Equal(13, cars.Count);
+        long IdOf(string key) => cars.First(c => c.GetProperty("key").GetString() == key).GetProperty("id").GetInt64();
+        // profile.json keeps these numbers: the first eight cars keep theirs, the new ones follow
+        Assert.Equal(1, IdOf("kaze"));
+        Assert.Equal(8, IdOf("tora"));
+        Assert.Equal(9, IdOf("s14a"));
+        // the dealer shows them in the sort order: the S14a between the Chaser and the RX-7
+        var keys = cars.Select(c => c.GetProperty("key").GetString()).ToList();
+        Assert.Equal(keys.IndexOf("ronin") + 1, keys.IndexOf("s14a"));
+        Assert.Equal(keys.IndexOf("kitsune") - 1, keys.IndexOf("s14a"));
+        var s14a = cars.First(c => c.GetProperty("key").GetString() == "s14a");
+        Assert.Equal("Nissan 200SX S14a", s14a.GetProperty("name").GetString());
+        Assert.Equal("coupe", s14a.GetProperty("body").GetString());
+        Assert.Equal("RWD", s14a.GetProperty("drive").GetString());
+        Assert.Equal("AWD", cars.First(c => c.GetProperty("key").GetString() == "g81").GetProperty("drive").GetString());
+    }
+
+    [Fact]
     public async Task Buying_upgrading_and_painting_change_the_saved_profile()
     {
         var catalog = await GetAsync("/catalog");

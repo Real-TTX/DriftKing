@@ -11,7 +11,7 @@
     <script type="importmap">{ "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }</script>
 </head>
 <body>
-    <!-- maps.html?map=pass|deck|harbor|city&view=top|orbit|road&time=night|dusk&quality=low|medium|high&at=0.3 (road: a camera on the course at that lap fraction) -->
+    <!-- maps.html?map=pass|deck|harbor|city&view=top|orbit|road&time=night|dusk&quality=low|medium|high&at=0.3&h=3&look=25&side=0 (road: a camera on the course at that lap fraction, h m above it, side m off the centre line) -->
     <div id="dk-stage" class="stage"></div>
     <div id="info"></div>
     <script type="module">
@@ -36,7 +36,8 @@
         const centre = new THREE.Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2);
         const span = Math.max(maxX - minX, maxZ - minZ);
         const view = q.get('view') ?? 'orbit';
-        const at = Number(q.get('at') ?? 0);
+        // window.view moves the road camera without a reload (tools/screenshots): at (lap fraction), height, look (m ahead), side (m off the centre line)
+        const road = window.view = { at: Number(q.get('at') ?? 0), height: Number(q.get('h') ?? 3), look: Number(q.get('look') ?? 25), side: Number(q.get('side') ?? 0) };
         const target = new THREE.Vector3();
         if (view === 'top') {
             world.scene.fog = null;
@@ -53,10 +54,10 @@
                     camera.position.set(centre.x, span * 1.05, centre.z + 1);
                     camera.lookAt(centre);
                 } else if (view === 'road') {
-                    const p = course.at(at * course.length);
-                    const ahead = course.at(at * course.length + 25);
-                    camera.position.set(p.x, p.y + 3, p.z);
-                    camera.lookAt(ahead.x, ahead.y + 1, ahead.z);
+                    const p = course.at(road.at * course.length);
+                    const ahead = course.at(road.at * course.length + road.look);
+                    camera.position.set(p.x - p.tz * road.side, p.y + road.height, p.z + p.tx * road.side);
+                    camera.lookAt(ahead.x, ahead.y + road.height / 3, ahead.z);
                 } else {
                     const a = time * 0.05 + 0.6;
                     camera.position.set(centre.x + Math.cos(a) * span * 0.75, span * 0.32 + 20, centre.z + Math.sin(a) * span * 0.75);
@@ -68,6 +69,8 @@
                     `${world.name} · ${Math.round(course.length)} m · built ${Math.round(built)} ms · ${stage.fps.toFixed(0)} fps · calls ${stage.renderer.info.render.calls} · tris ${stage.renderer.info.render.triangles}`;
             },
         });
+        window.world = world;
+        window.stage = stage;
         window.__ready = true;
     </script>
 </body>

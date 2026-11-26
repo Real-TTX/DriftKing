@@ -104,6 +104,13 @@ public static class SeedLogic
         var cars = await db.Cars.Select(c => c.Key).ToListAsync();
         db.Cars.AddRange(SeedContent.Cars().Where(c => !cars.Contains(c.Key)));
 
+        // the first eight cars got their real names: rows that still carry the former seeded texts follow (an administrator's texts stay)
+        var former = SeedContent.FormerCars.Select(f => f.Key).ToList();
+        foreach (var car in await db.Cars.Where(c => former.Contains(c.Key)).ToListAsync())
+        {
+            SeedContent.Refresh(car);
+        }
+
         var maps = await db.Maps.Select(m => m.Key).ToListAsync();
         db.Maps.AddRange(SeedContent.Maps().Where(m => !maps.Contains(m.Key)));
         await db.SaveChangesAsync();

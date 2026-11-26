@@ -1,0 +1,314 @@
+{
+  "s14a": {
+    "car": "Nissan 200SX S14a",
+    "note": "coupe, RWD – the owner's favourite: take the best model there is",
+    "length": 4.52,
+    "wheelbase": 2.525,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "kaze": {
+    "car": "Nissan Silvia S13",
+    "note": "coupe, RWD, the starter car",
+    "length": 4.47,
+    "wheelbase": 2.475,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "hotaru": {
+    "car": "Toyota Sprinter Trueno AE86",
+    "note": "hatch, RWD (no film or anime livery)",
+    "length": 4.205,
+    "wheelbase": 2.4,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "ronin": {
+    "car": "Toyota Chaser JZX100",
+    "note": "sedan, RWD",
+    "length": 4.715,
+    "wheelbase": 2.73,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "kitsune": {
+    "car": "Mazda RX-7 FD3S",
+    "note": "fastback, RWD",
+    "length": 4.295,
+    "wheelbase": 2.425,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "yurei": {
+    "car": "Nissan Silvia S15 Spec-R",
+    "note": "coupe, RWD",
+    "length": 4.445,
+    "wheelbase": 2.525,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "raijin": {
+    "car": "Nissan Skyline GT-R R34",
+    "note": "wide, AWD",
+    "length": 4.6,
+    "wheelbase": 2.665,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "oni": {
+    "car": "Ford Mustang GT",
+    "note": "muscle, RWD (S550: 4.784 m; S650: 4.811 m)",
+    "length": 4.784,
+    "wheelbase": 2.72,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "tora": {
+    "car": "Toyota Supra A80 Widebody",
+    "note": "wide, RWD (stock length; a widebody kit adds width, not length)",
+    "length": 4.515,
+    "wheelbase": 2.55,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "g81": {
+    "car": "BMW M3 Competition Touring G81",
+    "note": "sedan body, AWD (xDrive)",
+    "length": 4.801,
+    "wheelbase": 2.857,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "e46": {
+    "car": "BMW M3 E46",
+    "note": "coupe, RWD",
+    "length": 4.492,
+    "wheelbase": 2.731,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "z33": {
+    "car": "Nissan 350Z",
+    "note": "fastback, RWD",
+    "length": 4.315,
+    "wheelbase": 2.65,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  },
+  "gr86": {
+    "car": "Toyota GR86",
+    "note": "coupe, RWD",
+    "length": 4.265,
+    "wheelbase": 2.575,
+    "title": "",
+    "author": "",
+    "authorUrl": "",
+    "licence": "",
+    "licenceUrl": "",
+    "source": {
+      "uid": "",
+      "url": ""
+    },
+    "input": "",
+    "forward": "+z",
+    "exclude": null,
+    "wheels": {
+      "match": "",
+      "brakes": null,
+      "split": false
+    },
+    "roles": {}
+  }
+}
